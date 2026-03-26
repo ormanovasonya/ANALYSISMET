@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RONIN // METEORA LP SCANNER</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#0A0A0A; --surface:#111111; --panel:#141414; --lift:#1A1A1A;
+  --border:#222222; --border2:#1C1C1C; --text:#D8D8D8; --dim:#5A5A5A;
+  --muted:#3A3A3A; --blood:#B22222; --blood2:#C41E3A; --dark-blood:#330000;
+  --steel:#A0A0A8; --steel2:#B0B0C0; --win:#4CAF50; --lose:#C41E3A; --warn:#cc8800;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+::selection{background:var(--blood);color:#fff;}
+body{background:var(--void);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;cursor:crosshair;}
+::-webkit-scrollbar{width:2px;background:var(--void);}
+::-webkit-scrollbar-thumb{background:var(--blood);}
+.bg-kanji{position:fixed;right:-60px;top:50%;transform:translateY(-50%);font-size:480px;line-height:1;color:rgba(178,34,34,0.025);font-family:serif;pointer-events:none;z-index:0;user-select:none;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:500;background:var(--void);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:56px;}
+.logo-mark{display:flex;align-items:center;gap:14px;}
+.logo-slash{width:3px;height:28px;background:var(--blood);}
+.logo-text{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:0.3em;text-transform:uppercase;margin-top:2px;}
+.hdr-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.api-pill{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;padding:4px 12px;border:1px solid var(--border);color:var(--dim);text-transform:uppercase;}
+.api-pill.live{border-color:var(--blood);color:var(--blood);}
+
+/* LAYOUT */
+.main{position:relative;z-index:1;max-width:1480px;margin:0 auto;padding:0 40px 80px;}
+
+/* SETUP */
+.setup-screen{min-height:calc(100vh - 56px);display:flex;flex-direction:column;justify-content:center;padding:60px 0;}
+.setup-kicker{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--blood);margin-bottom:20px;}
+.setup-title{font-size:64px;font-weight:900;letter-spacing:-0.03em;line-height:0.9;margin-bottom:40px;}
+.setup-title em{font-style:normal;color:var(--blood);}
+.setup-form{display:flex;flex-direction:column;gap:14px;max-width:540px;}
+.field-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.field-wrap{display:flex;}
+input[type="text"],input[type="password"],textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-right:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:12px 16px;outline:none;transition:border-color .15s;letter-spacing:0.04em;resize:vertical;}
+input:focus,textarea:focus{border-color:var(--blood);}
+input::placeholder,textarea::placeholder{color:var(--muted);}
+.setup-note{font-size:12px;color:var(--dim);line-height:1.6;margin-top:6px;}
+.setup-note a{color:var(--blood);text-decoration:none;}
+
+/* BUTTONS */
+.btn-primary{background:var(--blood);color:#fff;border:1px solid var(--blood);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;padding:12px 22px;cursor:crosshair;transition:background .1s,transform .1s;white-space:nowrap;flex-shrink:0;}
+.btn-primary:hover{background:var(--blood2);transform:translateY(-1px);}
+.btn-primary:active{transform:translateY(0);}
+.btn-primary:disabled{opacity:.4;pointer-events:none;}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;padding:10px 16px;cursor:crosshair;transition:border-color .15s,color .15s;}
+.btn-ghost:hover{border-color:var(--steel);color:var(--steel);}
+.btn-ghost:disabled{opacity:.4;pointer-events:none;}
+.btn-sm{padding:6px 14px;font-size:9px;}
+
+/* SCAN SCREEN */
+#app-screen{display:none;}
+.section-kicker{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.35em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;}
+
+/* WALLET PASTE AREA */
+.wallet-paste-wrap{position:relative;}
+#wallet-paste{min-height:120px;font-size:11px;line-height:1.8;border-right:none;width:100%;}
+.paste-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+.wallet-count-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blood);border:1px solid var(--blood);padding:3px 10px;letter-spacing:0.1em;}
+.wallet-tags-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;max-height:80px;overflow-y:auto;}
+.w-tag{display:flex;align-items:center;gap:6px;background:var(--dark-blood);border:1px solid var(--blood);padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blood2);letter-spacing:0.04em;}
+.w-tag-remove{cursor:crosshair;color:var(--blood);font-size:12px;opacity:.6;transition:opacity .1s;}
+.w-tag-remove:hover{opacity:1;}
+
+/* BULK SCANNER PROGRESS */
+.scanner-panel{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--blood);padding:20px 24px;margin-bottom:20px;display:none;}
+.scanner-panel.active{display:block;}
+.sp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.sp-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--blood);}
+.sp-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);margin-bottom:12px;}
+.sp-stat{background:var(--void);padding:10px 14px;}
+.sp-stat-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.sp-stat-val{font-size:18px;font-weight:900;letter-spacing:-0.02em;}
+.progress-bar-wrap{height:3px;background:var(--border);position:relative;overflow:hidden;margin-bottom:8px;}
+.progress-bar-fill{height:100%;background:var(--blood);transition:width .3s ease;box-shadow:0 0 8px var(--blood);}
+.sp-log{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);line-height:1.8;max-height:120px;overflow-y:auto;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;}
+.sp-log-line{padding:1px 0;}
+.sp-log-line.ok{color:var(--win);}
+.sp-log-line.fail{color:var(--lose);}
+.sp-log-line.info{color:var(--warn);}
+
+/* ALERTS */
+.alerts-zone{display:flex;flex-direction:column;gap:1px;margin-bottom:24px;}
+.alert{display:flex;align-items:flex-start;gap:14px;padding:11px 16px;border-left:2px solid;font-size:13px;line-height:1.5;}
+.alert-critical{background:rgba(178,34,34,0.08);border-color:var(--blood);}
+.alert-warn{background:rgba(60,40,0,0.3);border-color:#7a5500;}
+.alert-info{background:rgba(20,20,20,0.8);border-color:var(--border);}
+.alert-icon{font-size:14px;margin-top:1px;flex-shrink:0;}
+.alert strong{color:var(--text);font-weight:600;}
+
+/* OVERVIEW STRIP */
+.overview-strip{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--border);margin-bottom:1px;}
+.ov-cell{padding:18px 20px;border-right:1px solid var(--border);position:relative;transition:background .1s;}
+.ov-cell:last-child{border-right:none;}
+.ov-cell:hover{background:var(--surface);}
+.ov-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
+.ov-val{font-size:22px;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:5px;}
+.ov-val.blood{color:var(--blood2);}
+.ov-val.steel{color:var(--steel2);}
+.ov-val.win{color:var(--win);}
+.ov-val.lose{color:var(--lose);}
+.ov-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);}
+.ov-accent-line{position:absolute;bottom:0;left:0;right:0;height:2px;}
+
+/* TIME FILTER */
+.time-filter{display:flex;margin-bottom:28px;border:1px solid var(--border);width:fit-content;}
+.tf-btn{background:transparent;border:none;border-right:1px solid var(--border);color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;padding:7px 14px;cursor:crosshair;text-transform:uppercase;transition:all .1s;}
+.tf-btn:last-child{border-right:none;}
+.tf-btn.active{background:var(--blood);color:#fff;}
+.tf-btn:hover:not(.active){background:var(--surface);color:var(--steel);}
+
+/* TABS */
+.tabs-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;flex-wrap:wrap;}
+.tab-btn{background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;padding:11px 22px;cursor:crosshair;transition:all .1s;}
+.tab-btn.active{border-bottom-color:var(--blood);color:var(--text);}
+.tab-btn:hover:not(.active){color:var(--steel);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;animation:sliceIn .2s ease;}
+@keyframes sliceIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* TABLE */
+.tbl-wrap{border:1px solid var(--border);overflow:hidden;}
+.tbl-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;gap:10px;}
+.tbl-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--dim);}
+.tbl-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blood);letter-spacing:0.1em;margin-left:12px;}
+#pos-search{background:var(--panel);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 12px;outline:none;width:220px;}
+#pos-search:focus{border-color:var(--blood);}
+#pos-search::placeholder{color:var(--muted);}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);background:var(--surface);}
+th{padding:9px 13px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);font-weight:500;cursor:crosshair;user-select:none;white-space:nowrap;}
+th:hover{color:var(--steel);}
+td{padding:10px 13px;font-size:12px;border-bottom:1px solid var(--border2);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(178,34,34,0.04);}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px;}
+.pair-cell{display:flex;align-items:center;gap:9px;}
+.token-logos{display:flex;align-items:center;}
+.token-logo{width:18px;height:18px;border-radius:50%;background:var(--lift);border:1px solid var(--border);object-fit:cover;margin-right:-5px;}
+.token-logo:last-child{margin-right:0;}
+.pair-name{font-weight:600;font-size:13px;}
+.strat-tag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border:1px solid;}
+.strat-spot{border-color:var(--blood);color:var(--blood);}
+.strat-curve{border-color:var(--steel);color:var(--steel);}
+.strat-bidask{border-color:#7a5500;color:#cc8800;}
+.strat-wide{border-color:var(--muted);color:var(--dim);}
+.strat-single{border-color:#1a3a1a;color:#4a7a4a;}
+.imb-dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--warn);margin-left:3px;vertical-align:middle;}
+.in-range-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px;}
+.in-range-dot.yes{background:var(--win);box-shadow:0 0 4px var(--win);}
+.in-range-dot.no{background:var(--blood2);box-shadow:0 0 4px var(--blood2);}
+.in-range-dot.edge{background:var(--warn);box-shadow:0 0 4px var(--warn);}
+.pnl-pos{color:var(--win);font-weight:600;}
+.pnl-neg{color:var(--blood2);font-weight:600;}
+.health-badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:2px 6px;border:1px solid;}
+.health-a{border-color:#2A5A2A;color:var(--win);}
+.health-b{border-color:#5a5500;color:#cc8800;}
+.health-c{border-color:#5a2a00;color:#cc5500;}
+.health-d{border-color:var(--blood);color:var(--blood2);}
+
+/* RANGE BAR */
+.range-vis{display:flex;align-items:center;gap:5px;min-width:110px;}
+.range-track{flex:1;height:4px;background:var(--muted);position:relative;overflow:visible;}
+.range-fill{position:absolute;top:0;bottom:0;background:var(--steel);opacity:.4;}
+.range-active-tick{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--blood);box-shadow:0 0 5px var(--blood);}
+.range-active-tick.out{background:var(--blood2);}
+.range-price{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);}
+
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:28px;}
+.an-card{background:var(--void);padding:24px;}
+.an-card.wide{grid-column:1/-1;}
+.an-title{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--dim);margin-bottom:18px;}
+.hbar-list{display:flex;flex-direction:column;gap:5px;}
+.hbar-row{display:flex;align-items:center;gap:10px;}
+.hbar-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);width:68px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hbar-track{flex:1;height:18px;background:var(--surface);position:relative;}
+.hbar-fill{position:absolute;inset:0;right:auto;transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+.hbar-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);width:48px;text-align:right;}
+.donut-wrap{display:flex;align-items:center;gap:24px;}
+.donut-legend{display:flex;flex-direction:column;gap:9px;}
+.dl-item{display:flex;align-items:center;gap:9px;}
+.dl-line{width:14px;height:2px;flex-shrink:0;}
+.dl-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--steel);}
+.dl-pct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-left:auto;}
+.heat-row{display:flex;gap:2px;margin-bottom:2px;align-items:center;}
+.heat-dlbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);width:20px;text-align:right;flex-shrink:0;}
+.heat-cell{flex:1;height:16px;cursor:crosshair;}
+.heat-cell:hover{outline:1px solid var(--blood);}
+.heat-hlabel{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-align:center;}
+
+/* DETAIL */
+.detail-list{display:flex;flex-direction:column;gap:1px;background:var(--border);}
+.detail-card{background:var(--void);padding:24px 28px;border-left:2px solid transparent;transition:border-color .1s;}
+.detail-card:hover{border-left-color:var(--blood);}
+.dc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.dc-pair{font-size:22px;font-weight:900;letter-spacing:-0.02em;}
+.dc-tags{display:flex;gap:7px;margin-top:7px;flex-wrap:wrap;}
+.dc-pnl-block{text-align:right;}
+.dc-pnl-val{font-size:28px;font-weight:900;letter-spacing:-0.03em;line-height:1;}
+.dc-pnl-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-top:3px;}
+.dc-metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);margin-bottom:14px;}
+.dc-metric{background:var(--surface);padding:12px 14px;}
+.dcm-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.dcm-val{font-size:15px;font-weight:900;letter-spacing:-0.01em;line-height:1;}
+.dcm-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:3px;}
+.brb-block{background:var(--surface);padding:12px 16px;margin-bottom:8px;border-left:1px solid var(--border);}
+.brb-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--dim);margin-bottom:9px;}
+.brb-track{display:flex;height:8px;gap:1px;}
+.brb-seg{flex:1;}
+.brb-seg.out{background:var(--muted);opacity:.2;}
+.brb-seg.in{background:var(--steel);opacity:.5;}
+.brb-seg.active{background:var(--blood);opacity:1;box-shadow:0 0 6px var(--blood);}
+.brb-footer{display:flex;justify-content:space-between;margin-top:5px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);}
+.hold-compare{background:var(--surface);padding:12px 16px;border-left:1px solid var(--border);}
+.hc-title{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--dim);margin-bottom:9px;}
+.hc-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border2);}
+.hc-row:last-child{border-bottom:none;padding-top:8px;margin-top:3px;}
+.hc-key{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);}
+.hc-val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
+.be-bar-bg{height:3px;background:var(--muted);margin-top:6px;}
+.be-bar-fill{height:100%;background:var(--win);transition:width 1s ease;}
+.be-bar-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:3px;}
+
+/* WALLET CARDS */
+.wallet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1px;background:var(--border);margin-bottom:28px;}
+.wallet-card{background:var(--void);padding:20px;border-bottom:2px solid transparent;transition:border-color .1s;}
+.wallet-card:hover{border-bottom-color:var(--blood);}
+.wc-addr{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blood2);margin-bottom:12px;letter-spacing:0.04em;cursor:pointer;}
+.wc-addr:hover{color:var(--blood);}
+.wc-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border2);}
+.wc-row:last-child{border-bottom:none;}
+.wc-k{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.wc-v{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
+
+/* INSIGHTS */
+.insight-list{display:flex;flex-direction:column;gap:1px;background:var(--border);}
+.insight-item{background:var(--void);display:flex;align-items:flex-start;gap:14px;padding:13px 16px;font-size:13px;line-height:1.6;transition:background .1s;}
+.insight-item:hover{background:var(--surface);}
+.ins-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blood);min-width:22px;margin-top:2px;}
+.insight-item strong{color:var(--text);}
+
+/* SCORES */
+.scores-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);margin-bottom:28px;}
+.score-card{background:var(--void);padding:22px;display:flex;gap:18px;align-items:center;}
+.score-svg{flex-shrink:0;}
+.score-body{flex:1;}
+.score-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;}
+.score-val{font-size:34px;font-weight:900;letter-spacing:-0.03em;line-height:1;margin-bottom:3px;}
+.score-val.blood{color:var(--blood2);}
+.score-val.steel{color:var(--steel2);}
+.score-val.win{color:var(--win);}
+.score-desc{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);line-height:1.5;}
+
+/* MULTI BANNER */
+.multi-banner{border:1px solid var(--border);border-left:3px solid var(--blood);padding:12px 20px;margin-bottom:20px;background:var(--dark-blood);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--steel);display:none;letter-spacing:0.04em;}
+.multi-banner.on{display:block;}
+.multi-banner strong{color:var(--blood2);}
+
+/* EMPTY */
+.empty-state{display:flex;flex-direction:column;align-items:flex-start;padding:70px 0;}
+.es-kanji{font-family:serif;font-size:110px;color:rgba(178,34,34,0.12);line-height:1;margin-bottom:20px;user-select:none;}
+.es-title{font-size:36px;font-weight:900;letter-spacing:-0.02em;margin-bottom:10px;}
+.es-desc{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);line-height:1.8;}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(10,10,10,.9);z-index:800;display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;}
+.loading-overlay.active{display:flex;}
+.loading-glyph{font-family:serif;font-size:56px;color:var(--blood);animation:breathe 1.2s ease-in-out infinite;}
+@keyframes breathe{0%,100%{opacity:.4;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
+.loading-msg{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--dim);}
+
+/* FALLBACK */
+.fallback-strip{background:rgba(60,40,0,.3);border-top:1px solid #7a5500;border-bottom:1px solid #7a5500;padding:7px 16px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#cc8800;letter-spacing:0.1em;margin-bottom:18px;display:none;}
+.fallback-strip.on{display:block;}
+
+/* EXPORT MODAL */
+.modal-backdrop{display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.85);align-items:center;justify-content:center;}
+.modal-backdrop.open{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--blood);max-width:640px;width:92%;padding:32px;max-height:90vh;overflow-y:auto;}
+.modal-kicker{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--blood);margin-bottom:14px;}
+.modal-title{font-size:20px;font-weight:900;letter-spacing:-0.02em;margin-bottom:7px;}
+.modal-desc{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);line-height:1.8;margin-bottom:24px;}
+.exp-options{display:flex;flex-direction:column;gap:1px;background:var(--border);margin-bottom:20px;}
+.exp-row{display:flex;align-items:flex-start;gap:14px;background:var(--void);padding:14px 16px;cursor:crosshair;transition:background .1s;}
+.exp-row:hover{background:var(--surface);}
+.exp-row input[type="checkbox"]{margin-top:3px;accent-color:var(--blood);flex-shrink:0;}
+.exp-row-title{font-weight:600;margin-bottom:3px;font-size:13px;}
+.exp-row-desc{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);line-height:1.6;}
+.exp-tag{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--blood);border:1px solid var(--blood);padding:1px 7px;margin-left:8px;vertical-align:middle;}
+.exp-preview{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);line-height:1.8;margin-bottom:20px;padding:11px 14px;background:var(--panel);border-left:1px solid var(--border);}
+.exp-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.exp-period{display:flex;margin-bottom:18px;border:1px solid var(--border);width:fit-content;}
+
+/* RESPONSIVE */
+@media(max-width:1100px){
+  .overview-strip{grid-template-columns:repeat(3,1fr);}
+  .main{padding:0 20px 60px;}
+  header{padding:0 20px;}
+  .analytics-grid{grid-template-columns:1fr;}
+  .dc-metrics{grid-template-columns:repeat(3,1fr);}
+  .scores-row{grid-template-columns:1fr;}
+}
+@media(max-width:720px){
+  .setup-title{font-size:40px;}
+  .overview-strip{grid-template-columns:1fr 1fr;}
+  .bg-kanji{font-size:220px;}
+}
+</style>
+</head>
+<body>
+<div class="bg-kanji">侍</div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-glyph">刃</div>
+  <div class="loading-msg" id="loading-msg">Инициализация…</div>
+</div>
+
+<header>
+  <div class="logo-mark">
+    <div class="logo-slash"></div>
+    <div>
+      <div class="logo-text">Ronin // LP Scanner</div>
+      <div class="logo-sub">Meteora DLMM · 200 Wallets</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div id="hdr-key" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);display:none;"></div>
+    <div class="api-pill" id="api-status-pill">Не подключено</div>
+    <button class="btn-ghost btn-sm" id="export-btn" onclick="openExportModal()" style="display:none;">↓ Экспорт</button>
+    <button class="btn-ghost btn-sm" id="change-key-btn" onclick="showSetup()" style="display:none;">Ключ</button>
+  </div>
+</header>
+
+<!-- ══ EXPORT MODAL ══ -->
+<div class="modal-backdrop" id="export-modal">
+  <div class="modal-box">
+    <div class="modal-kicker">// экспорт для AI-анализа</div>
+    <div class="modal-title">Скачать данные</div>
+    <div class="modal-desc">JSON отправь в чат для анализа паттернов. CSV — для Excel / Python pandas.</div>
+    <div class="exp-options">
+      <label class="exp-row">
+        <input type="checkbox" id="exp-overview" checked>
+        <div><div class="exp-row-title">Overview метрики<span class="exp-tag">РЕКОМЕНДУЕТСЯ</span></div>
+        <div class="exp-row-desc">per-wallet: total_pnl, total_fee, real_il, win_rate, roi, avg_age, top_strategy, out_of_range_count + API overview за 7D/1M/3M/ALL</div></div>
+      </label>
+      <label class="exp-row">
+        <input type="checkbox" id="exp-open" checked>
+        <div><div class="exp-row-title">Открытые позиции</div>
+        <div class="exp-row-desc">strategy, pair, TVL, PnL, fee, inRange, priceRange, DPR, age</div></div>
+      </label>
+      <label class="exp-row">
+        <input type="checkbox" id="exp-closed" checked>
+        <div><div class="exp-row-title">Закрытые позиции</div>
+        <div class="exp-row-desc">strategy, pair, input/output, PnL, fee, age_hours, created_at, closed_at — паттерны входа/выхода</div></div>
+      </label>
+      <label class="exp-row">
+        <input type="checkbox" id="exp-computed" checked>
+        <div><div class="exp-row-title">Вычисленные метрики<span class="exp-tag">РЕКОМЕНДУЕТСЯ</span></div>
+        <div class="exp-row-desc">real_IL_usd/pct (CLMM formula), fee_to_il_ratio, health_score A-D, break_even_days, apr + reliability flag, rebalance_signal</div></div>
+      </label>
+      <label class="exp-row">
+        <input type="checkbox" id="exp-agg" checked>
+        <div><div class="exp-row-title">Агрегированные паттерны<span class="exp-tag">РЕКОМЕНДУЕТСЯ</span></div>
+        <div class="exp-row-desc">cross-wallet: strategy_win_rates, pair_win_rates, hour_utc_analysis, fee_tier_analysis, age_bucket_analysis, range_width_analysis</div></div>
+      </label>
+      <label class="exp-row">
+        <input type="checkbox" id="exp-profitable-only">
+        <div><div class="exp-row-title">Только прибыльные кошельки</div>
+        <div class="exp-row-desc">Фильтр: экспортировать только кошельки с total_pnl > 0 за выбранный период</div></div>
+      </label>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div class="field-label" style="margin-bottom:8px;">Период фильтрации прибыльности</div>
+      <div class="exp-period" id="exp-period-sel">
+        <button class="tf-btn active" onclick="setExpPeriod('ALL',this)">ALL</button>
+        <button class="tf-btn" onclick="setExpPeriod('7D',this)">7D</button>
+        <button class="tf-btn" onclick="setExpPeriod('1M',this)">1M</button>
+        <button class="tf-btn" onclick="setExpPeriod('3M',this)">3M</button>
+      </div>
+    </div>
+    <div class="exp-preview" id="exp-preview">// обновляется при выборе опций</div>
+    <div class="exp-actions">
+      <button class="btn-primary" onclick="doExport('json')" style="flex:1;">↓ JSON (для Claude)</button>
+      <button class="btn-ghost" onclick="doExport('csv')" style="flex:1;">↓ CSV (для Excel)</button>
+      <button class="btn-ghost" onclick="closeExportModal()">Отмена</button>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:14px;line-height:1.7;">
+      Файл не содержит API-ключ. Все данные — позиции и метрики. Безопасно для отправки.
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ══ SETUP ══ -->
+<div class="setup-screen" id="setup-screen">
+  <div class="setup-kicker">// инициализация</div>
+  <h1 class="setup-title">Enter<br>the <em>void</em></h1>
+  <div class="setup-form">
+    <div>
+      <div class="field-label">LP Agent API Key</div>
+      <div class="field-wrap">
+        <input type="password" id="api-key-input" placeholder="lpagent_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false"/>
+        <button class="btn-primary" onclick="saveKey()">Войти</button>
+      </div>
+      <div class="setup-note" style="margin-top:6px;">
+        Получить ключ: <a href="https://portal.lpagent.io/" target="_blank" rel="noopener">portal.lpagent.io</a>
+        · <a href="https://docs.lpagent.io/api-key-dashboard/dashboard" target="_blank" rel="noopener">Тарифы</a>
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <div class="field-label">— или тест без ключа —</div>
+      <button class="btn-ghost" onclick="useDemo()">Демо-режим (200 mock кошельков)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app-screen">
+<div style="padding-top:28px;">
+
+  <!-- WALLET INPUT -->
+  <div class="section-kicker">// кошельки — вставь до 200 адресов</div>
+  <div class="wallet-paste-wrap">
+    <div class="field-wrap" style="margin-bottom:8px;">
+      <textarea id="wallet-paste" rows="5" placeholder="Вставь адреса через пробел, запятую или новую строку&#10;7KHx2Uc5qsqz652eXbu8Qtabi5KLxWJLgxFzcaBzP32i&#10;DMQ7mJ8DTXYLoc1g1NpSv7jtDdaCzsLUdzvvY8MA4hbX&#10;..."></textarea>
+      <button class="btn-primary" onclick="parsePaste()" style="align-self:stretch;">Загрузить</button>
+    </div>
+    <div class="paste-actions">
+      <span class="wallet-count-badge" id="wallet-count-badge">0 кошельков</span>
+      <button class="btn-ghost btn-sm" onclick="clearWallets()">Очистить</button>
+      <button class="btn-ghost btn-sm" onclick="loadDemoWallets()">Demo 20 кошельков</button>
+      <button class="btn-primary" id="scan-btn" onclick="runBulkScan()" style="padding:8px 20px;">▶ Сканировать</button>
+    </div>
+  </div>
+
+  <!-- SCANNER PROGRESS PANEL -->
+  <div class="scanner-panel" id="scanner-panel">
+    <div class="sp-header">
+      <div class="sp-title" id="sp-title">// сканирование…</div>
+      <button class="btn-ghost btn-sm" id="sp-abort-btn" onclick="abortScan()">Остановить</button>
+    </div>
+    <div class="sp-stats">
+      <div class="sp-stat"><div class="sp-stat-lbl">Обработано</div><div class="sp-stat-val" id="sp-done">0</div></div>
+      <div class="sp-stat"><div class="sp-stat-lbl">Всего</div><div class="sp-stat-val" id="sp-total">0</div></div>
+      <div class="sp-stat"><div class="sp-stat-lbl">Успешно</div><div class="sp-stat-val" style="color:var(--win)" id="sp-ok">0</div></div>
+      <div class="sp-stat"><div class="sp-stat-lbl">Ошибок</div><div class="sp-stat-val" style="color:var(--blood2)" id="sp-fail">0</div></div>
+      <div class="sp-stat"><div class="sp-stat-lbl">ETA</div><div class="sp-stat-val" style="font-size:14px;" id="sp-eta">—</div></div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="sp-prog" style="width:0%"></div></div>
+    <div class="sp-log" id="sp-log"></div>
+  </div>
+
+  <div class="fallback-strip" id="fallback-strip">⚠ Часть запросов упала. Данные могут быть неполными — проверь лог сканирования.</div>
+  <div class="multi-banner" id="multi-banner"></div>
+  <div class="alerts-zone" id="alerts-zone"></div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" id="empty-state">
+    <div class="es-kanji">無</div>
+    <div class="es-title">Нет данных</div>
+    <div class="es-desc">Вставь адреса кошельков выше и нажми «Сканировать»<br>Поддерживается до 200 кошельков за сессию</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+
+    <div class="time-filter">
+      <button class="tf-btn active" onclick="setTimePeriod('ALL',this)">ALL</button>
+      <button class="tf-btn" onclick="setTimePeriod('7D',this)">7D</button>
+      <button class="tf-btn" onclick="setTimePeriod('1M',this)">1M</button>
+      <button class="tf-btn" onclick="setTimePeriod('3M',this)">3M</button>
+      <button class="tf-btn" onclick="setTimePeriod('1Y',this)">1Y</button>
+    </div>
+
+    <div class="overview-strip" id="overview-strip"></div>
+    <div style="height:1px;background:var(--border);margin-bottom:28px;"></div>
+
+    <div class="tabs-row">
+      <button class="tab-btn active" onclick="switchTab('positions',this)">Позиции</button>
+      <button class="tab-btn" onclick="switchTab('analytics',this)">Аналитика</button>
+      <button class="tab-btn" onclick="switchTab('detail',this)">Детальный разбор</button>
+      <button class="tab-btn" onclick="switchTab('wallets',this)">По кошелькам</button>
+      <button class="tab-btn" onclick="switchTab('insights',this)">Инсайты</button>
+    </div>
+
+    <!-- POSITIONS -->
+    <div class="tab-pane active" id="tab-positions">
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar">
+          <div><span class="tbl-title">LP Positions</span><span class="tbl-count" id="pos-count-lbl"></span></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="pos-status-filter" onchange="filterPosTable()" style="background:var(--panel);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 10px;outline:none;">
+              <option value="all">Все статусы</option>
+              <option value="open">Только открытые</option>
+              <option value="closed">Только закрытые</option>
+            </select>
+            <input id="pos-search" placeholder="// поиск…" oninput="filterPosTable()"/>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th onclick="sortPos('pair')">Пара ↕</th>
+              <th onclick="sortPos('wallet')">Кошелёк ↕</th>
+              <th onclick="sortPos('strategy')">Стратегия ↕</th>
+              <th>Диапазон</th>
+              <th onclick="sortPos('inRange')">Range ↕</th>
+              <th onclick="sortPos('health')">Health ↕</th>
+              <th onclick="sortPos('value')">TVL $ ↕</th>
+              <th onclick="sortPos('fee')">Fee $ ↕</th>
+              <th onclick="sortPos('uncollected')">Unclaimed ↕</th>
+              <th onclick="sortPos('pnl')">P&L $ ↕</th>
+              <th onclick="sortPos('ilUsd')">IL $ ↕</th>
+              <th onclick="sortPos('feeToIL')">Fee/IL ↕</th>
+              <th onclick="sortPos('age')">Возраст ↕</th>
+              <th onclick="sortPos('dpr')">DPR % ↕</th>
+              <th onclick="sortPos('apr')">APR % ↕</th>
+            </tr></thead>
+            <tbody id="pos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="tab-pane" id="tab-analytics">
+      <div class="analytics-grid">
+        <div class="an-card"><div class="an-title">// стратегии входа</div>
+          <div class="donut-wrap">
+            <svg id="strat-donut" width="110" height="110" viewBox="0 0 110 110"></svg>
+            <div class="donut-legend" id="strat-legend"></div>
+          </div>
+        </div>
+        <div class="an-card"><div class="an-title">// fee tier</div><div class="hbar-list" id="fee-tier-bars"></div></div>
+        <div class="an-card wide">
+          <div class="an-title">// час открытия позиции (UTC) — по 200 кошелькам</div>
+          <div class="heat-row" style="margin-bottom:3px;"><div class="heat-dlbl"></div>
+            <div id="hour-hlabels" style="display:flex;gap:2px;flex:1;"></div>
+          </div>
+          <div id="hour-hmap"></div>
+        </div>
+        <div class="an-card"><div class="an-title">// время удержания</div><div class="hbar-list" id="duration-bars"></div></div>
+        <div class="an-card"><div class="an-title">// день недели входа</div><div class="hbar-list" id="dow-bars"></div></div>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="tab-pane" id="tab-detail">
+      <div class="detail-list" id="detail-list"></div>
+    </div>
+
+    <!-- WALLETS -->
+    <div class="tab-pane" id="tab-wallets">
+      <div class="wallet-grid" id="wallet-grid"></div>
+      <div class="an-title" style="margin-bottom:14px;">// TVL по кошелькам (топ 20)</div>
+      <div class="hbar-list" id="wcmp-bars"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="tab-pane" id="tab-insights">
+      <div class="scores-row">
+        <div class="score-card">
+          <svg class="score-svg" width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="#1C1C1C" stroke-width="7"/>
+            <circle id="s-eff" cx="28" cy="28" r="22" fill="none" stroke="#B22222" stroke-width="7" stroke-linecap="square" stroke-dasharray="0 138.2" style="transform:rotate(-90deg);transform-origin:28px 28px;transition:stroke-dasharray 1.5s cubic-bezier(.4,0,.2,1)"/>
+          </svg>
+          <div class="score-body"><div class="score-lbl">// Fee/IL Efficiency</div>
+            <div class="score-val blood" id="sv-eff">—</div>
+            <div class="score-desc" id="sd-eff">fee vs impermanent loss</div>
+          </div>
+        </div>
+        <div class="score-card">
+          <svg class="score-svg" width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="#1C1C1C" stroke-width="7"/>
+            <circle id="s-wr" cx="28" cy="28" r="22" fill="none" stroke="#A0A0A8" stroke-width="7" stroke-linecap="square" stroke-dasharray="0 138.2" style="transform:rotate(-90deg);transform-origin:28px 28px;transition:stroke-dasharray 1.5s cubic-bezier(.4,0,.2,1)"/>
+          </svg>
+          <div class="score-body"><div class="score-lbl">// Win Rate</div>
+            <div class="score-val steel" id="sv-wr">—</div>
+            <div class="score-desc" id="sd-wr">прибыльных позиций</div>
+          </div>
+        </div>
+        <div class="score-card">
+          <svg class="score-svg" width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="#1C1C1C" stroke-width="7"/>
+            <circle id="s-hs" cx="28" cy="28" r="22" fill="none" stroke="#2A5A2A" stroke-width="7" stroke-linecap="square" stroke-dasharray="0 138.2" style="transform:rotate(-90deg);transform-origin:28px 28px;transition:stroke-dasharray 1.5s cubic-bezier(.4,0,.2,1)"/>
+          </svg>
+          <div class="score-body"><div class="score-lbl">// Avg Health Score</div>
+            <div class="score-val win" id="sv-hs">—</div>
+            <div class="score-desc" id="sd-hs">средний балл позиций</div>
+          </div>
+        </div>
+      </div>
+      <div class="an-title" style="margin-bottom:12px;">// автоматически выявленные паттерны</div>
+      <div class="insight-list" id="insight-list"></div>
+    </div>
+
+  </div><!-- /dashboard -->
+</div>
+</div><!-- /app-screen -->
+</div><!-- /main -->
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════
+   CONSTANTS & STATE
+═══════════════════════════════════════════════════ */
+const API_BASE  = 'https://api.lpagent.io/open-api/v1';
+const KEY_STORE = 'ronin_lpk_v3';
+const CACHE_TTL = 8 * 60 * 1000; // 8 min
+const CONCURRENCY   = 3;   // parallel wallets
+const BATCH_DELAY   = 400; // ms between batches — stay under rate limit
+const MAX_WALLETS   = 200;
+
+const ALLOWED_IMG = ['token-logo.lpagent.io','arweave.net','www.dextools.io','raw.githubusercontent.com'];
+
+let demoMode    = false;
+let wallets     = [];           // validated addresses
+let walletMeta  = new Map();    // address → { overview, rawPositions }
+let allPositions    = [];       // enriched positions across all wallets
+let filteredPositions = [];
+let overviewData    = {};       // merged overview for current period display
+let currentPeriod   = 'ALL';
+let sortCol = null, sortDir = 1;
+let currentAbort    = null;
+let exportPeriod    = 'ALL';
+const CACHE         = new Map();
+let scanStartTime   = 0;
+
+/* ═══════════════════════════════════════════════════
+   SECURITY
+═══════════════════════════════════════════════════ */
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function safeImg(url) {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    if (!['https:','http:'].includes(u.protocol)) return '';
+    if (!ALLOWED_IMG.some(h => u.hostname===h || u.hostname.endsWith('.'+h))) return '';
+    return u.href;
+  } catch { return ''; }
+}
+function getKey()   { return sessionStorage.getItem(KEY_STORE) ?? ''; }
+function clearKey() { sessionStorage.removeItem(KEY_STORE); }
+
+/* ═══════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════ */
+const rnd   = (a,b) => Math.random()*(b-a)+a;
+const ri    = (a,b) => Math.floor(rnd(a,b+1));
+const pick  = arr   => arr[ri(0,arr.length-1)];
+const $     = id    => document.getElementById(id);
+const sleep = ms    => new Promise(r => setTimeout(r,ms));
+
+function fmt(n, d=1) {
+  if (n==null||(n!==0&&!n)) return '—';
+  const a = Math.abs(n);
+  if (a>=1e6) return (n/1e6).toFixed(d)+'M';
+  if (a>=1e3) return (n/1e3).toFixed(d)+'K';
+  return n.toFixed(d);
+}
+function fmtH(h) {
+  const n = parseFloat(h);
+  if (!n||n<0) return '<1h';
+  if (n<1)  return Math.round(n*60)+'m';
+  if (n<24) return n.toFixed(1)+'h';
+  return (n/24).toFixed(1)+'d';
+}
+function trunc(a) { return a?a.slice(0,4)+'…'+a.slice(-4):'—'; }
+function r2(n)  { return n!=null?Math.round(n*100)/100:null; }
+function r4(n)  { return n!=null?Math.round(n*10000)/10000:null; }
+function r6(n)  { return n!=null?Math.round(n*1000000)/1000000:null; }
+function topVal(arr) {
+  const c={};arr.forEach(v=>c[v]=(c[v]||0)+1);
+  return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]??null;
+}
+function genAddr() {
+  const c='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  return Array.from({length:44},()=>c[ri(0,c.length-1)]).join('');
+}
+const SOL_ADDR_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+/* ═══════════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════════ */
+function saveKey() {
+  const k=$('api-key-input').value.trim();
+  if(!k)return;
+  sessionStorage.setItem(KEY_STORE,k);
+  $('api-key-input').value='';
+  activateApp();
+}
+function useDemo() { demoMode=true; activateApp(); }
+function showSetup() {
+  clearKey(); demoMode=false;
+  $('setup-screen').style.display='flex';
+  $('app-screen').style.display='none';
+}
+function activateApp() {
+  $('setup-screen').style.display='none';
+  $('app-screen').style.display='block';
+  $('hdr-key').style.display='block';
+  $('hdr-key').textContent=demoMode?'DEMO':trunc(getKey());
+  $('change-key-btn').style.display='block';
+  const pill=$('api-status-pill');
+  pill.textContent=demoMode?'DEMO':'API Connected';
+  pill.className='api-pill live';
+}
+
+/* ═══════════════════════════════════════════════════
+   WALLET PASTE INPUT
+═══════════════════════════════════════════════════ */
+function parsePaste() {
+  const raw = $('wallet-paste').value;
+  // split by whitespace, comma, newline, semicolon
+  const candidates = raw.split(/[\s,;\n\r]+/).map(s=>s.trim()).filter(Boolean);
+  const valid = [];
+  const seen  = new Set();
+  for (const addr of candidates) {
+    if (SOL_ADDR_RE.test(addr) && !seen.has(addr)) {
+      seen.add(addr);
+      valid.push(addr);
+      if (valid.length >= MAX_WALLETS) break;
+    }
+  }
+  wallets = valid;
+  updateWalletCount();
+}
+
+function updateWalletCount() {
+  $('wallet-count-badge').textContent = `${wallets.length} кошельков`;
+  $('wallet-count-badge').style.borderColor = wallets.length > 0 ? 'var(--blood)' : 'var(--border)';
+  $('wallet-count-badge').style.color = wallets.length > 0 ? 'var(--blood)' : 'var(--muted)';
+}
+
+function clearWallets() {
+  wallets=[];
+  $('wallet-paste').value='';
+  updateWalletCount();
+}
+
+function loadDemoWallets() {
+  wallets = Array.from({length:20},()=>genAddr());
+  $('wallet-paste').value = wallets.join('\n');
+  updateWalletCount();
+}
+
+/* ═══════════════════════════════════════════════════
+   CACHED FETCH WITH RETRY
+═══════════════════════════════════════════════════ */
+async function cachedFetch(url, cacheKey, signal, retries=2) {
+  const cached = CACHE.get(cacheKey);
+  if (cached && Date.now()-cached.ts < CACHE_TTL) return cached.data;
+
+  for (let attempt=0; attempt<=retries; attempt++) {
+    try {
+      const res = await fetch(url, { headers:{'x-api-key':getKey()}, signal });
+      if (res.status===429) {
+        // rate limited — wait and retry
+        await sleep(2000*(attempt+1));
+        continue;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      CACHE.set(cacheKey, {data, ts:Date.now()});
+      return data;
+    } catch(e) {
+      if (e.name==='AbortError') throw e;
+      if (attempt===retries) throw e;
+      await sleep(800*(attempt+1));
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PER-WALLET FETCH
+═══════════════════════════════════════════════════ */
+async function fetchWalletData(wallet, signal) {
+  const w = encodeURIComponent(wallet);
+  // Fire 3 requests per wallet but track individually
+  const [openRes, histRes, ovRes] = await Promise.allSettled([
+    cachedFetch(`${API_BASE}/lp-positions/opening?owner=${w}&protocol=meteora`,   `open_${wallet}`, signal),
+    cachedFetch(`${API_BASE}/lp-positions/historical?owner=${w}&protocol=meteora&limit=50&page=1`, `hist_${wallet}`, signal),
+    cachedFetch(`${API_BASE}/lp-positions/overview?owner=${w}&protocol=meteora`,  `ov_${wallet}`,   signal),
+  ]);
+
+  let positions = [];
+
+  if (openRes.status==='fulfilled') {
+    const arr = openRes.value?.data;
+    if (Array.isArray(arr)) positions.push(...arr.map(p=>normalizePos(p,wallet,'open')));
+  }
+  if (histRes.status==='fulfilled') {
+    const arr = histRes.value?.data?.data ?? [];
+    positions.push(...arr.map(p=>normalizePos(p,wallet,'closed')));
+  }
+
+  // FIX: store per-wallet overview separately — NOT merged globally
+  let overview = {};
+  if (ovRes.status==='fulfilled') overview = ovRes.value?.data ?? {};
+
+  return { positions, overview, wallet };
+}
+
+/* ═══════════════════════════════════════════════════
+   BULK SCAN — main entry point for 200 wallets
+═══════════════════════════════════════════════════ */
+async function runBulkScan() {
+  // Parse textarea if not done yet
+  if (wallets.length === 0) { parsePaste(); }
+  if (wallets.length === 0) { alert('Вставь хотя бы один адрес кошелька'); return; }
+
+  if (demoMode) {
+    await runDemoScan();
+    return;
+  }
+
+  // Abort any previous scan
+  if (currentAbort) currentAbort.abort();
+  currentAbort = new AbortController();
+  const signal = currentAbort.signal;
+
+  // Reset state
+  allPositions = [];
+  walletMeta   = new Map();
+  const allOverviews = [];
+  let okCount=0, failCount=0;
+  scanStartTime = Date.now();
+
+  // Show scanner panel
+  $('scanner-panel').classList.add('active');
+  $('sp-total').textContent = wallets.length;
+  $('sp-done').textContent  = '0';
+  $('sp-ok').textContent    = '0';
+  $('sp-fail').textContent  = '0';
+  $('sp-prog').style.width  = '0%';
+  $('sp-log').innerHTML     = '';
+  $('scan-btn').disabled    = true;
+  $('empty-state').style.display = 'none';
+  $('fallback-strip').className  = 'fallback-strip';
+
+  spLog(`Начинаю сканирование ${wallets.length} кошельков…`, 'info');
+  spLog(`Concurrency: ${CONCURRENCY}, delay: ${BATCH_DELAY}ms`, 'info');
+
+  // Process in batches of CONCURRENCY
+  for (let i=0; i<wallets.length; i+=CONCURRENCY) {
+    if (signal.aborted) { spLog('Сканирование остановлено пользователем','info'); break; }
+
+    const batch = wallets.slice(i, i+CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map(w => fetchWalletData(w, signal))
+    );
+
+    for (let j=0; j<batchResults.length; j++) {
+      const w = batch[j];
+      const r = batchResults[j];
+      if (r.status==='fulfilled') {
+        okCount++;
+        allPositions.push(...r.value.positions.map(enrichPosition));
+        if (r.value.overview && Object.keys(r.value.overview).length) {
+          walletMeta.set(w, { overview: r.value.overview, posCount: r.value.positions.length });
+          allOverviews.push(r.value.overview);
+        }
+        spLog(`✓ ${trunc(w)} — ${r.value.positions.length} поз.`, 'ok');
+      } else {
+        if (r.reason?.name==='AbortError') continue;
+        failCount++;
+        spLog(`✗ ${trunc(w)} — ${r.reason?.message??'error'}`, 'fail');
+      }
+
+      // Update progress UI
+      const done  = okCount+failCount;
+      const pct   = Math.round(done/wallets.length*100);
+      $('sp-done').textContent = done;
+      $('sp-ok').textContent   = okCount;
+      $('sp-fail').textContent = failCount;
+      $('sp-prog').style.width = pct+'%';
+      $('sp-title').textContent = `// ${pct}% — ${done}/${wallets.length} кошельков`;
+
+      // ETA
+      const elapsed = (Date.now()-scanStartTime)/1000;
+      const rate    = done/elapsed;
+      const rem     = (wallets.length-done)/Math.max(rate,0.01);
+      $('sp-eta').textContent = rem<60 ? `${Math.round(rem)}с` : `${Math.round(rem/60)}м`;
+    }
+
+    if (i+CONCURRENCY < wallets.length) await sleep(BATCH_DELAY);
+  }
+
+  if (signal.aborted) { $('scan-btn').disabled=false; return; }
+
+  // FIX: merge overviews properly
+  overviewData = mergeOverviews(allOverviews);
+
+  if (failCount>0) $('fallback-strip').className = 'fallback-strip on';
+
+  filteredPositions = [...allPositions];
+  spLog(`Готово: ${okCount} успешно, ${failCount} ошибок. Позиций: ${allPositions.length}`, 'info');
+
+  $('sp-title').textContent = `// завершено — ${okCount}/${wallets.length} кошельков`;
+  $('sp-abort-btn').style.display = 'none';
+  $('scan-btn').disabled = false;
+
+  if (allPositions.length > 0) {
+    renderDashboard();
+    $('dashboard').style.display = 'block';
+    $('export-btn').style.display = 'block';
+  }
+}
+
+async function runDemoScan() {
+  const n = wallets.length || 20;
+  $('scanner-panel').classList.add('active');
+  $('sp-title').textContent='// demo scan…';
+  $('sp-total').textContent=n;
+  $('scan-btn').disabled=true;
+
+  // Simulate progressive scan
+  for (let i=0;i<n;i++) {
+    await sleep(60);
+    $('sp-done').textContent=i+1;
+    $('sp-ok').textContent=i+1;
+    $('sp-prog').style.width=((i+1)/n*100)+'%';
+    if (i<5) spLog(`✓ ${trunc(wallets[i]||genAddr())} — ${ri(2,15)} поз.`,'ok');
+  }
+
+  const mock = generateMockData(wallets.length>0?wallets:Array.from({length:20},genAddr));
+  allPositions  = mock.positions.map(enrichPosition);
+  overviewData  = mock.overview;
+  filteredPositions = [...allPositions];
+
+  // Populate walletMeta for per-wallet overview
+  wallets.forEach((w,i) => {
+    const wp = allPositions.filter(p=>p.wallet===w);
+    walletMeta.set(w, {
+      overview: mock.walletOverviews[i] ?? {},
+      posCount: wp.length
+    });
+  });
+
+  $('sp-title').textContent='// демо завершено';
+  $('scan-btn').disabled=false;
+  spLog(`Готово: ${n} mock кошельков, ${allPositions.length} позиций`,'info');
+  renderDashboard();
+  $('dashboard').style.display='block';
+  $('empty-state').style.display='none';
+  $('export-btn').style.display='block';
+}
+
+function abortScan() {
+  if (currentAbort) { currentAbort.abort(); currentAbort=null; }
+  $('scan-btn').disabled=false;
+  $('sp-title').textContent='// остановлено';
+}
+
+function spLog(msg, cls='') {
+  const log = $('sp-log');
+  const line = document.createElement('div');
+  line.className = 'sp-log-line'+' '+cls;
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+/* ═══════════════════════════════════════════════════
+   NORMALIZE POSITION
+═══════════════════════════════════════════════════ */
+function normalizeStrategy(raw) {
+  const map={
+    'Spot':             {d:'Spot',    imb:false},
+    'SpotImBalanced':   {d:'Spot',    imb:true},
+    'Curve':            {d:'Curve',   imb:false},
+    'CurveImBalanced':  {d:'Curve',   imb:true},
+    'BidAsk':           {d:'Bid-Ask', imb:false},
+    'BidAskImBalanced': {d:'Bid-Ask', imb:true},
+    'Wide':             {d:'Wide',    imb:false},
+    'Single':           {d:'Single',  imb:false},
+  };
+  const s=map[raw]??{d:(raw??'Spot').replace('ImBalanced','').trim(), imb:(raw??'').includes('ImBalanced')};
+  return s;
+}
+
+function normalizePos(p, wallet, status) {
+  const s = normalizeStrategy(p.strategyType??'Spot');
+  const [prLo,prHi,prCur] = p.priceRange??[0,0,0];
+  const pnlVal = p.pnl?.value??0;
+  const pnlPct = p.pnl?.percent??0;
+  const ageH   = parseFloat(p.ageHour??p.age??0)||0;
+
+  return {
+    id:             p.tokenId??p.position??Math.random().toString(36).slice(2),
+    wallet,status,
+    pair:           `${esc(p.tokenName0??p.pairName??'?')}/${esc(p.tokenName1??'SOL')}`,
+    pairRaw:        `${p.tokenName0??p.pairName??'?'}/${p.tokenName1??'SOL'}`,
+    logo0:          safeImg(p.logo0),
+    logo1:          safeImg(p.logo1),
+    strategy:       s.d,
+    isImbalanced:   s.imb,
+    strategyRaw:    p.strategyType,
+    inRange:        !!p.inRange,
+    value:          parseFloat(p.currentValue??p.value??0)||0,
+    inputValue:     parseFloat(p.inputValue??0)||0,
+    collectedFee:   parseFloat(p.collectedFee??0)||0,
+    uncollectedFee: parseFloat(p.unCollectedFee??p.uncollectedFee??0)||0,
+    pnl:pnlVal, pnlPct,
+    ageHour:ageH, age:p.age??'0',
+    dpr:parseFloat(p.dpr??0)||0,
+    feeTier:(p.poolInfo?.fee??0)/100,
+    tickLower:p.tickLower??0, tickUpper:p.tickUpper??0,
+    priceRangeLo:prLo, priceRangeHi:prHi, priceRangeCur:prCur,
+    createdAt:p.createdAt??null,
+    protocol:p.protocol??'meteora',
+    // computed — filled by enrichPosition
+    il:null, health:null, feeToIL:null, aprData:null, breakEven:null, rebalSig:null,
+  };
+}
+
+/* ═══════════════════════════════════════════════════
+   ENRICH — all computed metrics
+═══════════════════════════════════════════════════ */
+function enrichPosition(p) {
+  p.il       = calcIL(p);
+  p.health   = calcHealth(p);
+  p.feeToIL  = calcFeeIL(p);
+  p.aprData  = calcAPR(p);
+  p.breakEven= calcBE(p);
+  p.rebalSig = calcRebalSig(p);
+  return p;
+}
+
+/* Real IL — Uniswap v3 CLMM formula */
+function calcIL(p) {
+  const {inputValue:iv, priceRangeLo:lo, priceRangeHi:hi, priceRangeCur:cur, value:v, collectedFee:cf} = p;
+  if (!iv||!hi||hi===lo) return {ilPct:0,ilUsd:0,holdValue:iv||0,lpVsHold:0,k:1};
+  const mid   = (lo+hi)/2;
+  const k     = cur/mid;
+  const kSafe = Math.max(k,0.0001);
+  // IL% = 1 - 2√k/(1+k)
+  const ilFactor = Math.max(0, 1 - 2*Math.sqrt(kSafe)/(1+kSafe));
+  const holdValue = iv * Math.sqrt(kSafe);     // 50/50 LP hold baseline
+  const ilUsd     = Math.max(0, holdValue - v);
+  const ilPct     = holdValue>0.01 ? (ilUsd/holdValue)*100 : 0;
+  const lpVsHold  = (v+cf) - holdValue;
+  return {ilPct:r4(ilPct), ilUsd:r2(ilUsd), holdValue:r2(holdValue), lpVsHold:r2(lpVsHold), k:r4(k)};
+}
+
+/* Fee/IL ratio */
+function calcFeeIL(p) {
+  const fee   = p.collectedFee+p.uncollectedFee;
+  const il    = p.il?.ilUsd??0;
+  if (il<0.01) return {ratio:Infinity,covered:true,label:'∞'};
+  const ratio = fee/il;
+  return {ratio, covered:ratio>=1, label:ratio>=100?'>100×':ratio.toFixed(1)+'×'};
+}
+
+/* Annualised APR with reliability flag */
+function calcAPR(p) {
+  const ageH = Math.max(p.ageHour,0.01);
+  const fee  = p.collectedFee+p.uncollectedFee;
+  const base = p.inputValue>0?p.inputValue:p.value;
+  if (!base) return {apr:0,isReliable:false,warn:'no data'};
+  const apr  = (fee/base/ageH)*24*365*100;
+  const rel  = ageH>=24;
+  return {apr:r2(apr), isReliable:rel, warn:rel?null:`⚠ ${fmtH(String(ageH))} данных`};
+}
+
+/* Position Health Score 0-100 */
+function calcHealth(p) {
+  const inRangeS = p.inRange?100:0;
+
+  const fee   = p.collectedFee+p.uncollectedFee;
+  const ilUsd = p.il?.ilUsd??calcIL(p).ilUsd;
+  const ftil  = ilUsd>0.01?fee/ilUsd:(fee>0?2:0.5);
+  const ftilS = Math.min(100,ftil*50);
+
+  const lo=p.priceRangeLo,hi=p.priceRangeHi,cur=p.priceRangeCur;
+  let rangeS=0;
+  if (p.inRange&&hi>lo) {
+    const rel=Math.abs(cur-(lo+hi)/2)/((hi-lo)/2);
+    rangeS=Math.max(0,(1-rel))*100;
+  }
+
+  const dprS = Math.max(0,Math.min(100,(p.dpr/2)*100));
+  const score = Math.round(inRangeS*.30+ftilS*.25+rangeS*.25+dprS*.20);
+  const grade = score>=80?'A':score>=60?'B':score>=40?'C':'D';
+  const color = score>=80?'var(--win)':score>=60?'#cc8800':score>=40?'#cc5500':'var(--blood2)';
+  return {score,grade,color};
+}
+
+/* Range edge detection */
+function calcRangeEdge(p) {
+  const {priceRangeLo:lo,priceRangeHi:hi,priceRangeCur:cur}=p;
+  if (!hi||hi===lo) return {nearEdge:false,edgePct:50};
+  const rel=Math.abs(cur-(lo+hi)/2)/((hi-lo)/2);
+  return {nearEdge:rel>0.85&&p.inRange, edgePct:rel*100};
+}
+
+/* Break-even days */
+function calcBE(p) {
+  const ilUsd   = p.il?.ilUsd??0;
+  const fee     = p.collectedFee+p.uncollectedFee;
+  const dailyFee= fee/Math.max(p.ageHour/24,0.01);
+  if (dailyFee<=0||ilUsd<=0) return {days:Infinity,progress:fee>0?100:0,label:'—'};
+  const days = ilUsd/dailyFee;
+  const prog = Math.min(100,(fee/ilUsd)*100);
+  return {days, progress:r2(prog), label:days<1?`${(days*24).toFixed(1)}h`:`${days.toFixed(1)}d`};
+}
+
+/* Auto-rebalance signal */
+function calcRebalSig(p) {
+  if (!p.inRange) {
+    const side=p.priceRangeCur<p.priceRangeLo?'ниже':'выше';
+    return {action:'RERANGE',urgency:'HIGH',label:`⚡ OUT — цена ${side} диапазона`};
+  }
+  const edge=calcRangeEdge(p);
+  if (edge.nearEdge) return {action:'WATCH',urgency:'MED',label:`⚠ EDGE — ${edge.edgePct.toFixed(0)}% к границе`};
+  return {action:'HOLD',urgency:'LOW',label:'✓ OK'};
+}
+
+/* ═══════════════════════════════════════════════════
+   MERGE OVERVIEWS (multi-wallet)
+   FIX: proper per-field summation, not just first wallet
+═══════════════════════════════════════════════════ */
+function mergeOverviews(ovs) {
+  if (!ovs.length) return {};
+  if (ovs.length===1) return ovs[0];
+
+  const periods=['ALL','7D','1M','3M','1Y','YTD'];
+  const sumF=['total_fee','total_pnl','total_inflow','total_outflow','total_reward'];
+  const cntF=['total_lp','opening_lp','total_pool'];
+  const avgF=['win_rate','avg_age_hour','fee_percent','roi'];
+
+  const out={...ovs[0]};
+
+  for (const f of sumF) {
+    if (typeof ovs[0]?.[f]==='object'&&ovs[0][f]!==null) {
+      out[f]={};
+      for (const p of periods)
+        out[f][p]=ovs.reduce((s,o)=>s+(parseFloat(o?.[f]?.[p])||0),0);
+    } else {
+      out[f]=ovs.reduce((s,o)=>s+(parseFloat(o?.[f])||0),0);
+    }
+  }
+  for (const f of cntF) {
+    out[f]=String(ovs.reduce((s,o)=>s+(parseInt(o?.[f])||0),0));
+  }
+  for (const f of avgF) {
+    if (typeof ovs[0]?.[f]==='object'&&ovs[0][f]!==null) {
+      out[f]={};
+      for (const p of periods)
+        out[f][p]=ovs.reduce((s,o)=>s+(parseFloat(o?.[f]?.[p])||0),0)/ovs.length;
+    } else {
+      out[f]=ovs.reduce((s,o)=>s+(parseFloat(o?.[f])||0),0)/ovs.length;
+    }
+  }
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════
+   MOCK DATA GENERATOR (demo mode)
+═══════════════════════════════════════════════════ */
+const PAIRS_=[['SOL','USDC'],['JUP','SOL'],['WIF','SOL'],['BONK','SOL'],['PYTH','USDC'],['JTO','SOL'],['RNDR','SOL'],['RAY','SOL'],['MEME','SOL'],['W','USDC']];
+const STRATS_=['Spot','Spot','SpotImBalanced','Curve','BidAsk','BidAskImBalanced','Wide'];
+
+function generateMockData(wList) {
+  const positions=[];
+  const walletOverviews=[];
+
+  wList.forEach(w=>{
+    const nPos = ri(3,20);
+    const wPos=[];
+    for(let i=0;i<nPos;i++){
+      const [t0,t1]=pick(PAIRS_);
+      const sr=pick(STRATS_);
+      const si=normalizeStrategy(sr);
+      const lo=rnd(0.5,50),spread=rnd(0.1,1.0);
+      const hi=lo*(1+spread);
+      const cur=rnd(lo*0.75,hi*1.25);
+      const inRange=cur>=lo&&cur<=hi;
+      const ageH=rnd(0.5,500);
+      const iv=rnd(500,150000);
+      const val=iv*rnd(0.88,1.12);
+      const fee=val*rnd(0.002,0.09);
+      const uncFee=fee*rnd(0,0.5);
+      const pnl=fee-val*rnd(0,0.08);
+      const pnlPct=pnl/iv*100;
+      const dpr=rnd(-4,14);
+      const ft=[0.01,0.05,0.1,0.2,0.5,1][ri(0,5)];
+      const pos={
+        id:Math.random().toString(36).slice(2),
+        wallet:w,status:Math.random()>.35?'open':'closed',
+        pair:`${t0}/${t1}`,pairRaw:`${t0}/${t1}`,logo0:'',logo1:'',
+        strategy:si.d,isImbalanced:si.imb,strategyRaw:sr,
+        inRange,value:val,inputValue:iv,
+        collectedFee:fee,uncollectedFee:uncFee,
+        pnl,pnlPct,ageHour:ageH,age:(ageH/24).toFixed(2),
+        dpr,feeTier:ft,tickLower:-ri(100,500),tickUpper:-ri(10,100),
+        priceRangeLo:lo,priceRangeHi:hi,priceRangeCur:cur,
+        createdAt:new Date(Date.now()-ageH*3600000).toISOString(),
+        protocol:'meteora',
+        il:null,health:null,feeToIL:null,aprData:null,breakEven:null,rebalSig:null,
+      };
+      positions.push(pos);
+      wPos.push(pos);
+    }
+    // per-wallet mock overview
+    const totF=wPos.reduce((s,p)=>s+p.collectedFee,0);
+    const totP=wPos.reduce((s,p)=>s+p.pnl,0);
+    const wins=wPos.filter(p=>p.pnl>0).length;
+    walletOverviews.push({
+      total_fee:{ALL:totF,'7D':totF*.05,'1M':totF*.3,'3M':totF*.8,'1Y':totF},
+      total_pnl:{ALL:totP,'7D':totP*.05,'1M':totP*.3,'3M':totP*.8,'1Y':totP},
+      win_rate:{ALL:wins/wPos.length,'7D':wins/wPos.length*.9,'1M':wins/wPos.length,'3M':wins/wPos.length,'1Y':wins/wPos.length},
+      total_lp:String(wPos.length),opening_lp:String(wPos.filter(p=>p.status==='open').length),
+      avg_age_hour:wPos.reduce((s,p)=>s+p.ageHour,0)/wPos.length,
+      total_pool:String(new Set(wPos.map(p=>p.pairRaw)).size),
+      roi:totP/(wPos.reduce((s,p)=>s+p.inputValue,0)||1),
+      first_activity:new Date(Date.now()-30*86400000).toISOString().slice(0,10),
+      last_activity:new Date().toISOString().slice(0,10),
+    });
+  });
+
+  const totF=positions.reduce((s,p)=>s+p.collectedFee,0);
+  const totP=positions.reduce((s,p)=>s+p.pnl,0);
+  const wins=positions.filter(p=>p.pnl>0).length;
+  const n=positions.length;
+  const overview={
+    total_lp:String(n),opening_lp:String(positions.filter(p=>p.status==='open').length),
+    total_fee:{ALL:totF,'7D':totF*.05,'1M':totF*.3,'3M':totF*.8,'1Y':totF},
+    total_pnl:{ALL:totP,'7D':totP*.05,'1M':totP*.3,'3M':totP*.8,'1Y':totP},
+    win_rate:{ALL:wins/n,'7D':wins/n*.85,'1M':wins/n,'3M':wins/n,'1Y':wins/n},
+    avg_age_hour:positions.reduce((s,p)=>s+p.ageHour,0)/n,
+    total_pool:String(new Set(positions.map(p=>p.pairRaw)).size),
+    roi:totP/(positions.reduce((s,p)=>s+p.inputValue,0)||1),
+    total_inflow:positions.reduce((s,p)=>s+p.inputValue,0),
+  };
+  return {positions,overview,walletOverviews};
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER DASHBOARD
+═══════════════════════════════════════════════════ */
+function renderDashboard() {
+  renderAlerts();
+  renderMultiBanner();
+  renderOverviewStrip();
+  renderPositionsTable();
+  renderAnalytics();
+  renderDetail();
+  renderWallets();
+  renderInsights();
+}
+
+/* ALERTS */
+function renderAlerts() {
+  const op=allPositions.filter(p=>p.status==='open');
+  const oor=op.filter(p=>!p.inRange);
+  const edge=op.filter(p=>p.inRange&&calcRangeEdge(p).nearEdge);
+  const bigU=op.filter(p=>p.uncollectedFee>500);
+  const negD=op.filter(p=>p.dpr<-5);
+  const lowH=op.filter(p=>p.health?.grade==='D');
+  const alts=[];
+  if(oor.length) alts.push({cls:'alert-critical',icon:'⚡',text:`<strong>${oor.length} позиций</strong> вышли за диапазон — IL копится без fee. Требуют ребаланса.`});
+  if(edge.length) alts.push({cls:'alert-warn',icon:'⚠',text:`<strong>${edge.length} позиций</strong> на краю диапазона (>85% к границе). Подготовь ребаланс.`});
+  if(bigU.length) alts.push({cls:'alert-info',icon:'◈',text:`<strong>${bigU.length} позиций</strong> с unclaimed fee > $500 — можно собрать не закрывая.`});
+  if(negD.length) alts.push({cls:'alert-warn',icon:'▼',text:`<strong>${negD.length} позиций</strong> с DPR < -5%. IL съедает комиссии.`});
+  if(lowH.length) alts.push({cls:'alert-critical',icon:'🩸',text:`<strong>${lowH.length} позиций</strong> Health Score D — критическое состояние.`});
+  $('alerts-zone').innerHTML=alts.map(a=>`<div class="alert ${esc(a.cls)}"><span class="alert-icon">${esc(a.icon)}</span><span>${a.text}</span></div>`).join('');
+}
+
+/* MULTI BANNER */
+function renderMultiBanner() {
+  const mb=$('multi-banner');
+  if(wallets.length<2){mb.className='multi-banner';return;}
+  mb.className='multi-banner on';
+  const top=wallets.slice(0,5).map(w=>{
+    const wp=allPositions.filter(p=>p.wallet===w);
+    const tvl=wp.reduce((s,p)=>s+p.value,0);
+    return `<strong>${esc(trunc(w))}</strong>: $${fmt(tvl,0)}`;
+  }).join(' | ');
+  mb.innerHTML=`${wallets.length} кошельков — ${top}${wallets.length>5?` + ещё ${wallets.length-5}`:''}`;
+}
+
+/* OVERVIEW STRIP */
+function renderOverviewStrip() {
+  const per=currentPeriod;
+  const ov=overviewData;
+  const op=allPositions.filter(x=>x.status==='open');
+  const totTVL=op.reduce((s,x)=>s+x.value,0);
+  const totFee=ov.total_fee?.[per]??allPositions.reduce((s,x)=>s+x.collectedFee,0);
+  const totPnl=ov.total_pnl?.[per]??allPositions.reduce((s,x)=>s+x.pnl,0);
+  const wr=ov.win_rate?.[per]??0;
+  const totIL=allPositions.reduce((s,x)=>s+(x.il?.ilUsd??0),0);
+  const totLp=ov.total_lp??allPositions.length;
+  const cells=[
+    {lbl:'Open Positions',val:op.length,sub:`${totLp} всего`,cls:''},
+    {lbl:'Total TVL',val:'$'+fmt(totTVL),sub:'активная ликвидность',cls:'steel'},
+    {lbl:'Collected Fee',val:'$'+fmt(totFee),sub:per+' период',cls:'win',acc:'var(--win)'},
+    {lbl:'P&L',val:(totPnl>=0?'+':'')+'$'+fmt(totPnl),sub:per+' период',cls:totPnl>=0?'win':'lose',acc:totPnl>=0?'var(--win)':'var(--blood2)'},
+    {lbl:'Total Real IL',val:'−$'+fmt(totIL),sub:'impermanent loss (CLMM)',cls:totIL>5000?'blood':'',acc:totIL>5000?'var(--blood2)':null},
+    {lbl:'Wallets Scanned',val:wallets.length,sub:`${Math.round(op.filter(p=>!p.inRange).length/Math.max(op.length,1)*100)}% out of range`,cls:''},
+  ];
+  $('overview-strip').innerHTML=cells.map(c=>`
+    <div class="ov-cell">
+      <div class="ov-lbl">${esc(c.lbl)}</div>
+      <div class="ov-val ${esc(c.cls)}">${esc(c.val)}</div>
+      <div class="ov-sub">${esc(c.sub)}</div>
+      ${c.acc?`<div class="ov-accent-line" style="background:${esc(c.acc)};opacity:.6;"></div>`:''}
+    </div>`).join('');
+}
+
+/* POSITIONS TABLE */
+function renderPositionsTable(data) {
+  const ps=data??filteredPositions;
+  $('pos-count-lbl').textContent=`${ps.filter(p=>p.status==='open').length} open / ${ps.length} total`;
+  const FALLBACK_SVG="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Ccircle cx='9' cy='9' r='9' fill='%23222'/%3E%3C/svg%3E";
+  $('pos-tbody').innerHTML=ps.map(p=>{
+    const pCls=p.pnl>=0?'pnl-pos':'pnl-neg';
+    const sc={'Spot':'strat-spot','Bid-Ask':'strat-bidask','Curve':'strat-curve','Wide':'strat-wide','Single':'strat-single'};
+    const sCls=sc[p.strategy]??'strat-spot';
+    const h=p.health??{score:0,grade:'D'};
+    const apr=p.aprData??{apr:0,isReliable:false,warn:null};
+    const ftil=p.feeToIL??{label:'—'};
+    const lo=p.priceRangeLo,hi=p.priceRangeHi,cur=p.priceRangeCur;
+    let aPct=50,outCls='';
+    if(hi>lo){aPct=Math.max(0,Math.min(100,(cur-lo)/(hi-lo)*100));if(!p.inRange)outCls='out';}
+    const edge=calcRangeEdge(p);
+    const dotCls=!p.inRange?'no':edge.nearEdge?'edge':'yes';
+    const rangeLabel=!p.inRange?'OUT':edge.nearEdge?'EDGE':'YES';
+    const rangeColor=!p.inRange?'var(--blood2)':edge.nearEdge?'var(--warn)':'var(--win)';
+    const ilUsd=p.il?.ilUsd??0;
+    const aprTxt=apr.isReliable?`${apr.apr.toFixed(0)}%`:`<span style="color:var(--warn);font-size:9px;">~${apr.apr.toFixed(0)}%</span>`;
+    return `<tr>
+      <td><div class="pair-cell">
+        <div class="token-logos">
+          <img class="token-logo" src="${p.logo0||FALLBACK_SVG}" onerror="this.src='${FALLBACK_SVG}'" loading="lazy">
+          <img class="token-logo" src="${p.logo1||FALLBACK_SVG}" onerror="this.src='${FALLBACK_SVG}'" loading="lazy">
+        </div>
+        <span class="pair-name">${p.pair}</span>
+      </div></td>
+      <td><span class="mono" style="color:var(--blood2);cursor:pointer;" title="${esc(p.wallet)}">${esc(trunc(p.wallet))}</span></td>
+      <td><span class="strat-tag ${esc(sCls)}">${esc(p.strategy)}</span>${p.isImbalanced?'<span class="imb-dot" title="ImBalanced"></span>':''}</td>
+      <td><div class="range-vis">
+        <span class="range-price">${lo>0?lo.toFixed(2):'—'}</span>
+        <div class="range-track">
+          <div class="range-fill" style="left:0;width:100%;"></div>
+          <div class="range-active-tick ${esc(outCls)}" style="left:${aPct}%;"></div>
+        </div>
+        <span class="range-price">${hi>0?hi.toFixed(2):'—'}</span>
+      </div></td>
+      <td><span class="in-range-dot ${esc(dotCls)}"></span><span class="mono" style="font-size:10px;color:${rangeColor}">${esc(rangeLabel)}</span></td>
+      <td><span class="health-badge health-${esc(h.grade.toLowerCase())}">${esc(h.grade)}${h.score}</span></td>
+      <td class="mono">$${fmt(p.value,0)}</td>
+      <td class="mono" style="color:var(--win)">$${fmt(p.collectedFee,1)}</td>
+      <td class="mono" style="color:var(--steel2)">$${fmt(p.uncollectedFee,1)}</td>
+      <td class="mono ${esc(pCls)}">${p.pnl>=0?'+':''}$${fmt(p.pnl,0)}</td>
+      <td class="mono" style="color:var(--blood2)">−$${fmt(ilUsd,1)}</td>
+      <td class="mono" style="color:${ftil.covered?'var(--win)':'var(--blood2)'}">${esc(ftil.label)}</td>
+      <td class="mono" style="color:var(--dim)">${esc(fmtH(String(p.ageHour)))}</td>
+      <td class="mono" style="color:${p.dpr>=0?'var(--win)':'var(--blood2)'}">${p.dpr>=0?'+':''}${p.dpr.toFixed(2)}%</td>
+      <td class="mono">${aprTxt}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterPosTable() {
+  const q=$('pos-search').value.toLowerCase();
+  const st=$('pos-status-filter').value;
+  filteredPositions=allPositions.filter(p=>{
+    const matchQ=!q||p.pairRaw.toLowerCase().includes(q)||p.strategy.toLowerCase().includes(q)||p.wallet.toLowerCase().includes(q);
+    const matchS=st==='all'||p.status===st;
+    return matchQ&&matchS;
+  });
+  renderPositionsTable();
+}
+
+function sortPos(col) {
+  if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}
+  const m={pair:p=>p.pairRaw,wallet:p=>p.wallet,strategy:p=>p.strategy,
+    inRange:p=>p.inRange?1:0,health:p=>p.health?.score??0,value:p=>p.value,
+    fee:p=>p.collectedFee,uncollected:p=>p.uncollectedFee,pnl:p=>p.pnl,
+    ilUsd:p=>p.il?.ilUsd??0,feeToIL:p=>p.feeToIL?.ratio===Infinity?9999:(p.feeToIL?.ratio??0),
+    age:p=>p.ageHour,dpr:p=>p.dpr,apr:p=>p.aprData?.apr??0};
+  if(!m[col])return;
+  filteredPositions.sort((a,b)=>(m[col](a)>m[col](b)?1:-1)*sortDir);
+  renderPositionsTable();
+}
+
+/* ANALYTICS */
+function renderAnalytics() {
+  // Donut
+  const cnt={};allPositions.forEach(p=>cnt[p.strategy]=(cnt[p.strategy]||0)+1);
+  const tot=allPositions.length||1;
+  const colors={'Spot':'#B22222','Bid-Ask':'#cc8800','Curve':'#A0A0A8','Wide':'#444444','Single':'#2A5A2A'};
+  const dat=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+  const r=43,cx=55,cy=55,circ=2*Math.PI*r;
+  let off=0;
+  $('strat-donut').innerHTML=dat.map(([k,v])=>{
+    const dash=(v/tot)*circ;
+    const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${esc(colors[k]||'#555')}" stroke-width="11" stroke-dasharray="${dash} ${circ-dash}" stroke-dashoffset="${-off}" style="transform:rotate(-90deg);transform-origin:${cx}px ${cy}px;"/>`;
+    off+=dash;return el;
+  }).join('');
+  $('strat-legend').innerHTML=dat.map(([k,v])=>`
+    <div class="dl-item">
+      <div class="dl-line" style="background:${esc(colors[k]||'#555')}"></div>
+      <span class="dl-name">${esc(k)}</span>
+      <span class="dl-pct">${v} (${(v/tot*100).toFixed(0)}%)</span>
+    </div>`).join('');
+
+  // Fee tier
+  const ftC={};allPositions.forEach(p=>{const k=p.feeTier+'%';ftC[k]=(ftC[k]||0)+1;});
+  hbars('fee-tier-bars',Object.entries(ftC).sort((a,b)=>b[1]-a[1]),tot,'#B22222');
+
+  // Hour heatmap
+  const hc=new Array(24).fill(0);
+  allPositions.forEach(p=>{if(p.createdAt)hc[new Date(p.createdAt).getUTCHours()]++;});
+  const hmx=Math.max(...hc,1);
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  $('hour-hlabels').innerHTML=Array.from({length:24},(_,h)=>`<div class="heat-hlabel" style="flex:1">${h%6===0?h:''}</div>`).join('');
+  $('hour-hmap').innerHTML=days.map(d=>{
+    const cells=hc.map((v,h)=>`<div class="heat-cell" style="background:rgba(178,34,34,${0.04+(v/hmx)*0.88})" title="${esc(d)} ${h}:00 — ${v} входов"></div>`).join('');
+    return `<div class="heat-row"><div class="heat-dlbl">${esc(d)}</div>${cells}</div>`;
+  }).join('');
+
+  // Duration
+  const bk=['<1h','1-4h','4-12h','12-24h','1-3d','3-7d','>7d'];
+  const dc=new Array(7).fill(0);
+  allPositions.forEach(p=>{const h=p.ageHour;dc[h<1?0:h<4?1:h<12?2:h<24?3:h<72?4:h<168?5:6]++;});
+  hbars('duration-bars',bk.map((l,i)=>[l,dc[i]]),allPositions.length,'#A0A0A8');
+
+  // DOW
+  const dow=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dc2=new Array(7).fill(0);
+  allPositions.forEach(p=>{if(p.createdAt)dc2[(new Date(p.createdAt).getUTCDay()+6)%7]++;});
+  hbars('dow-bars',dow.map((l,i)=>[l,dc2[i]]),allPositions.length,'#5A5A5A');
+}
+
+function hbars(id,data,total,color) {
+  const max=Math.max(...data.map(d=>Array.isArray(d)?d[1]:d),1);
+  $(id).innerHTML=data.map(d=>{
+    const [lbl,val]=Array.isArray(d)?d:[d,d];
+    return`<div class="hbar-row">
+      <div class="hbar-lbl" title="${esc(String(lbl))}">${esc(String(lbl))}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${val/max*100}%;background:${esc(color)};opacity:.7;"></div></div>
+      <div class="hbar-val">${val}</div>
+    </div>`;
+  }).join('');
+}
+
+/* DETAIL */
+function renderDetail() {
+  const top=[...allPositions].filter(p=>p.status==='open').sort((a,b)=>b.value-a.value).slice(0,5);
+  if(!top.length){$('detail-list').innerHTML='<div style="padding:40px;color:var(--dim);font-family:JetBrains Mono,monospace;font-size:11px;">// нет открытых позиций</div>';return;}
+  $('detail-list').innerHTML=top.map((p,i)=>{
+    const lo=p.priceRangeLo,hi=p.priceRangeHi,cur=p.priceRangeCur;
+    const segs=22;
+    const aS=hi>lo?Math.min(Math.round((cur-lo)/(hi-lo)*segs),segs-1):11;
+    const segHtml=Array.from({length:segs},(_,si)=>`<div class="brb-seg ${si===aS?'active':p.inRange?'in':'out'}"></div>`).join('');
+    const il=p.il??calcIL(p);
+    const be=p.breakEven??calcBE(p);
+    const ftil=p.feeToIL??calcFeeIL(p);
+    const apr=p.aprData??calcAPR(p);
+    const hs=p.health??calcHealth(p);
+    const sig=p.rebalSig??calcRebalSig(p);
+    const sCls={'Spot':'strat-spot','Bid-Ask':'strat-bidask','Curve':'strat-curve','Wide':'strat-wide','Single':'strat-single'}[p.strategy]??'strat-spot';
+    const feePct=p.inputValue>0?((p.collectedFee/p.inputValue)*100).toFixed(2):'—';
+    return`<div class="detail-card">
+      <div class="dc-head">
+        <div>
+          <div class="dc-pair">${p.pair} <span style="font-size:14px;color:var(--dim);font-weight:400;">#${i+1} TVL</span></div>
+          <div class="dc-tags">
+            <span class="strat-tag ${esc(sCls)}">${esc(p.strategy)}${p.isImbalanced?' imb':''}</span>
+            <span class="strat-tag strat-wide">${esc(String(p.feeTier))}% fee</span>
+            <span class="strat-tag" style="border-color:var(--muted);color:var(--dim);">${esc(fmtH(String(p.ageHour)))}</span>
+            <span class="strat-tag" style="border-color:${p.inRange?'#2A5A2A':'var(--blood)'};color:${p.inRange?'var(--win)':'var(--blood2)'};">${p.inRange?'IN RANGE':'OUT OF RANGE'}</span>
+            <span class="health-badge health-${esc(hs.grade.toLowerCase())}">H: ${esc(hs.grade)} ${hs.score}</span>
+            <span class="strat-tag" style="border-color:${sig.urgency==='HIGH'?'var(--blood)':sig.urgency==='MED'?'#7a5500':'#2A5A2A'};color:${sig.urgency==='HIGH'?'var(--blood2)':sig.urgency==='MED'?'#cc8800':'var(--win)'};">${esc(sig.label)}</span>
+          </div>
+        </div>
+        <div class="dc-pnl-block">
+          <div class="dc-pnl-val ${p.pnl>=0?'pnl-pos':'pnl-neg'}">${p.pnl>=0?'+':''}$${fmt(p.pnl,0)}</div>
+          <div class="dc-pnl-sub">${p.pnlPct>=0?'+':''}${p.pnlPct.toFixed(2)}% P&amp;L</div>
+        </div>
+      </div>
+      <div class="dc-metrics">
+        <div class="dc-metric"><div class="dcm-lbl">TVL</div><div class="dcm-val">$${fmt(p.value,0)}</div><div class="dcm-sub">current</div></div>
+        <div class="dc-metric"><div class="dcm-lbl">Collected Fee</div><div class="dcm-val" style="color:var(--win)">$${fmt(p.collectedFee,1)}</div><div class="dcm-sub">${esc(feePct)}% of input</div></div>
+        <div class="dc-metric"><div class="dcm-lbl">Unclaimed</div><div class="dcm-val" style="color:var(--steel2)">$${fmt(p.uncollectedFee,1)}</div><div class="dcm-sub">claimable</div></div>
+        <div class="dc-metric"><div class="dcm-lbl">Real IL</div><div class="dcm-val" style="color:var(--blood2)">−$${fmt(il.ilUsd,0)}</div><div class="dcm-sub">${(il.ilPct??0).toFixed(1)}% от входа</div></div>
+        <div class="dc-metric"><div class="dcm-lbl">Fee/IL</div><div class="dcm-val" style="color:${ftil.covered?'var(--win)':'var(--blood2)'}">${esc(ftil.label)}</div><div class="dcm-sub">${ftil.covered?'fee > IL':'IL > fee'}</div></div>
+        <div class="dc-metric"><div class="dcm-lbl">APR</div><div class="dcm-val" style="color:${(apr.apr??0)>0?'var(--win)':'var(--blood2)'}">${(apr.apr??0).toFixed(0)}%</div><div class="dcm-sub">${esc(apr.warn??'годовой')}</div></div>
+      </div>
+      <div class="brb-block">
+        <div class="brb-label">// bin range — активный тик</div>
+        <div class="brb-track">${segHtml}</div>
+        <div class="brb-footer">
+          <span>$${lo>0?lo.toFixed(3):'—'}</span>
+          <span>↑ $${cur>0?cur.toFixed(3):'—'} now</span>
+          <span>$${hi>0?hi.toFixed(3):'—'}</span>
+        </div>
+      </div>
+      <div class="hold-compare">
+        <div class="hc-title">// LP vs Hold</div>
+        <div class="hc-row"><span class="hc-key">Hold value (est.)</span><span class="hc-val">$${fmt(il.holdValue,0)}</span></div>
+        <div class="hc-row"><span class="hc-key">LP + fees</span><span class="hc-val">$${fmt(p.value+p.collectedFee,0)}</span></div>
+        <div class="hc-row"><span class="hc-key">Итог</span><span class="hc-val ${(il.lpVsHold??0)>=0?'pnl-pos':'pnl-neg'}">${(il.lpVsHold??0)>=0?'LP +$'+fmt(il.lpVsHold,0):'Hold +$'+fmt(Math.abs(il.lpVsHold??0),0)}</span></div>
+        <div class="be-bar-bg"><div class="be-bar-fill" style="width:${be.progress??0}%"></div></div>
+        <div class="be-bar-lbl">Break-even: ${esc(be.label??'—')} — fee покрывают IL на ${(be.progress??0).toFixed(0)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* WALLETS TAB */
+function renderWallets() {
+  const top20=wallets.slice(0,20);
+  $('wallet-grid').innerHTML=top20.map(w=>{
+    const wp=allPositions.filter(p=>p.wallet===w);
+    const meta=walletMeta.get(w);
+    const ov=meta?.overview;
+    const tvl=wp.reduce((s,p)=>s+p.value,0);
+    const fee=wp.reduce((s,p)=>s+p.collectedFee+p.uncollectedFee,0);
+    const pnl=wp.reduce((s,p)=>s+p.pnl,0);
+    const il=wp.reduce((s,p)=>s+(p.il?.ilUsd??0),0);
+    const opn=wp.filter(p=>p.status==='open').length;
+    const wr=wp.length?(wp.filter(p=>p.pnl>0).length/wp.length*100).toFixed(0):'—';
+    const avgH=wp.length?wp.reduce((s,p)=>s+(p.health?.score??0),0)/wp.length:0;
+    const top=topVal(wp.map(p=>p.strategy));
+    // Use real API win_rate if available
+    const apiWR=ov?.win_rate?.ALL;
+    return`<div class="wallet-card">
+      <div class="wc-addr" title="${esc(w)}" onclick="navigator.clipboard?.writeText('${esc(w)}')">${esc(trunc(w))}</div>
+      <div class="wc-row"><span class="wc-k">Позиций</span><span class="wc-v" style="color:var(--blood2)">${wp.length} (${opn} open)</span></div>
+      <div class="wc-row"><span class="wc-k">TVL</span><span class="wc-v" style="color:var(--steel2)">$${fmt(tvl,0)}</span></div>
+      <div class="wc-row"><span class="wc-k">Total Fee</span><span class="wc-v" style="color:var(--win)">$${fmt(fee,0)}</span></div>
+      <div class="wc-row"><span class="wc-k">Real IL</span><span class="wc-v" style="color:var(--blood2)">−$${fmt(il,0)}</span></div>
+      <div class="wc-row"><span class="wc-k">P&amp;L</span><span class="wc-v ${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+':''}$${fmt(pnl,0)}</span></div>
+      <div class="wc-row"><span class="wc-k">Win Rate</span><span class="wc-v">${apiWR?`${(apiWR*100).toFixed(0)}% (API)`:wr+'%'}</span></div>
+      <div class="wc-row"><span class="wc-k">Avg Health</span><span class="wc-v">${avgH.toFixed(0)}/100</span></div>
+      <div class="wc-row"><span class="wc-k">Top Strategy</span><span class="wc-v" style="color:var(--dim)">${esc(top??'—')}</span></div>
+      ${ov?.roi?`<div class="wc-row"><span class="wc-k">ROI (API)</span><span class="wc-v">${(ov.roi*100).toFixed(2)}%</span></div>`:''}
+    </div>`;
+  }).join('');
+  if(wallets.length>20){
+    const extra=document.createElement('div');
+    extra.style.cssText='padding:16px;font-family:JetBrains Mono,monospace;font-size:10px;color:var(--dim);background:var(--void);border-top:1px solid var(--border);';
+    extra.textContent=`+ ещё ${wallets.length-20} кошельков — все включены в экспорт`;
+    $('wallet-grid').appendChild(extra);
+  }
+
+  const top10=wallets.slice(0,10);
+  const labels=top10.map(w=>trunc(w));
+  const tvls=top10.map(w=>Math.round(allPositions.filter(p=>p.wallet===w).reduce((s,p)=>s+p.value,0)));
+  const mx=Math.max(...tvls,1);
+  $('wcmp-bars').innerHTML=labels.map((l,i)=>`
+    <div class="hbar-row">
+      <div class="hbar-lbl">${esc(l)}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${tvls[i]/mx*100}%;background:var(--blood);opacity:.7;"></div></div>
+      <div class="hbar-val">$${fmt(tvls[i],0)}</div>
+    </div>`).join('');
+}
+
+/* INSIGHTS + SCORES */
+function renderInsights() {
+  const per=currentPeriod;
+  const ov=overviewData;
+  const totPnl=ov.total_pnl?.[per]??allPositions.reduce((s,x)=>s+x.pnl,0);
+  const wr=ov.win_rate?.[per]??0;
+  const totFee=ov.total_fee?.[per]??allPositions.reduce((s,x)=>s+x.collectedFee,0);
+  const totIL=allPositions.reduce((s,x)=>s+(x.il?.ilUsd??0),0);
+  const avgAge=ov.avg_age_hour??allPositions.reduce((s,x)=>s+x.ageHour,0)/(allPositions.length||1);
+  const outOfRange=allPositions.filter(x=>x.status==='open'&&!x.inRange).length;
+  const avgDpr=allPositions.reduce((s,x)=>s+x.dpr,0)/(allPositions.length||1);
+  const avgHS=allPositions.reduce((s,x)=>s+(x.health?.score??0),0)/(allPositions.length||1);
+  const ftilG=totIL>0.01?totFee/totIL:Infinity;
+  const lpBetter=allPositions.filter(x=>(x.il?.lpVsHold??-1)>0).length;
+  const hcounts=new Array(24).fill(0);
+  allPositions.forEach(p=>{if(p.createdAt)hcounts[new Date(p.createdAt).getUTCHours()]++;});
+  const peakH=hcounts.indexOf(Math.max(...hcounts));
+  const topStrat=Object.entries(allPositions.reduce((a,x)=>{a[x.strategy]=(a[x.strategy]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1])[0];
+  const profWallets=wallets.filter(w=>allPositions.filter(p=>p.wallet===w).reduce((s,p)=>s+p.pnl,0)>0);
+
+  const effScore=Math.min(100,Math.round(Math.min(ftilG,2)*50));
+  const wrScore=Math.round(wr*100);
+  const hsScore=Math.round(avgHS);
+  setScore('s-eff','sv-eff','sd-eff',effScore,`${ftilG===Infinity?'∞':ftilG.toFixed(1)}× fee покрывают IL`,'fee не покрывают IL');
+  setScore('s-wr','sv-wr','sd-wr',wrScore,`${wrScore}% прибыльных позиций`,`${wrScore}% — ниже 50%`);
+  setScore('s-hs','sv-hs','sd-hs',hsScore,`${hsScore}/100 — хорошее состояние`,`${hsScore}/100 — нужен ребаланс`);
+
+  const ins=[
+    {n:'01',t:`P&amp;L за <strong>${esc(per)}</strong>: <strong>${totPnl>=0?'+':''}$${fmt(totPnl,0)}</strong> — Win Rate <strong>${(wr*100).toFixed(1)}%</strong> (${wallets.length} кошельков)`},
+    {n:'02',t:`Fee: <strong>$${fmt(totFee,0)}</strong> / Real IL: <strong>−$${fmt(totIL,0)}</strong> — Fee/IL ratio = <strong>${ftilG===Infinity?'∞':ftilG.toFixed(2)+'×'}</strong>`},
+    {n:'03',t:`Прибыльных кошельков: <strong>${profWallets.length} из ${wallets.length}</strong> (${wallets.length?(profWallets.length/wallets.length*100).toFixed(0):0}%)`},
+    {n:'04',t:`Доминирующая стратегия: <strong>${esc(topStrat?.[0]??'Spot')}</strong> (${topStrat?.[1]??0} позиций)`},
+    {n:'05',t:`Среднее время удержания: <strong>${esc(fmtH(String(avgAge)))}</strong> — ${avgAge<4?'высокочастотная тактика':avgAge<72?'дневные–недельные позиции':'долгосрочный LP'}`},
+    {n:'06',t:`Пиковый час входа: <strong>${peakH}:00–${peakH+1}:00 UTC</strong> — ${peakH>=1&&peakH<=9?'азиатская сессия':peakH>=7&&peakH<=17?'европейская сессия':'американская сессия'}`},
+    {n:'07',t:outOfRange?`<strong>${outOfRange} позиций</strong> вне диапазона — IL накапливается без fee`:'Все открытые позиции <strong>в диапазоне</strong>'},
+    {n:'08',t:`LP лучше холда в <strong>${lpBetter}/${allPositions.length}</strong> позициях (${allPositions.length?((lpBetter/allPositions.length)*100).toFixed(0):0}%)`},
+    {n:'09',t:`Средний Health Score: <strong>${hsScore}/100</strong> — ${hsScore>=80?'портфель отличный':hsScore>=60?'мониторинг нескольких позиций':hsScore>=40?'ребаланс нужен':'критическое состояние'}`},
+    {n:'10',t:`Средний DPR: <strong>${avgDpr>=0?'+':''}${avgDpr.toFixed(2)}%</strong> — ${avgDpr>=1?'сильный':avgDpr>=0?'слабоположительный':avgDpr>=-2?'умеренно отрицательный':'критически отрицательный'}`},
+  ];
+  $('insight-list').innerHTML=ins.map(x=>`<div class="insight-item"><span class="ins-num">${esc(x.n)}</span><span>${x.t}</span></div>`).join('');
+}
+
+function setScore(rId,vId,dId,score,pos,neg) {
+  const circ=2*Math.PI*22;
+  const fill=(Math.max(0,Math.min(100,score))/100)*circ;
+  setTimeout(()=>$(rId).setAttribute('stroke-dasharray',`${fill} ${circ-fill}`),400);
+  $(vId).textContent=score;
+  $(dId).textContent=score>=50?pos:neg;
+}
+
+/* TABS & TIME */
+function switchTab(tab,btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  $('tab-'+tab).classList.add('active');
+}
+function setTimePeriod(period,btn) {
+  currentPeriod=period;
+  document.querySelectorAll('.tf-btn:not(.exp-period .tf-btn)').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if($('dashboard').style.display!=='none'){renderOverviewStrip();renderInsights();}
+}
+
+/* ═══════════════════════════════════════════════════
+   EXPORT SYSTEM — per-wallet overview from walletMeta
+═══════════════════════════════════════════════════ */
+function setExpPeriod(p,btn) {
+  exportPeriod=p;
+  $('exp-period-sel').querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateExpPreview();
+}
+function openExportModal() {
+  if(!allPositions.length)return;
+  $('export-modal').classList.add('open');
+  updateExpPreview();
+  ['exp-overview','exp-open','exp-closed','exp-computed','exp-agg','exp-profitable-only'].forEach(id=>{
+    const el=$(id);if(el)el.onchange=updateExpPreview;
+  });
+}
+function closeExportModal(){$('export-modal').classList.remove('open');}
+
+function updateExpPreview() {
+  const profOnly=$('exp-profitable-only').checked;
+  const fW=profOnly
+    ? wallets.filter(w=>allPositions.filter(p=>p.wallet===w).reduce((s,p)=>s+p.pnl,0)>0)
+    : wallets;
+  const op=allPositions.filter(p=>p.status==='open'&&fW.includes(p.wallet));
+  const cl=allPositions.filter(p=>p.status==='closed'&&fW.includes(p.wallet));
+  $('exp-preview').innerHTML=
+    `кошельков: <strong style="color:var(--text)">${fW.length}</strong> / ${wallets.length}<br>`+
+    `открытых позиций: <strong style="color:var(--text)">${op.length}</strong><br>`+
+    `закрытых позиций: <strong style="color:var(--text)">${cl.length}</strong><br>`+
+    `фильтр: <strong style="color:var(--text)">${profOnly?`PnL > 0 (${exportPeriod})`:'все'}</strong><br>`+
+    `ориентировочный размер файла: <strong style="color:var(--text)">~${Math.round((fW.length*8+op.length*3+cl.length*2)/10)}KB</strong>`;
+}
+
+function buildExportPayload() {
+  const profOnly=$('exp-profitable-only').checked;
+  const incOv=$('exp-overview').checked;
+  const incOp=$('exp-open').checked;
+  const incCl=$('exp-closed').checked;
+  const incCmp=$('exp-computed').checked;
+  const incAgg=$('exp-agg').checked;
+
+  const fW=profOnly
+    ? wallets.filter(w=>allPositions.filter(p=>p.wallet===w).reduce((s,p)=>s+p.pnl,0)>0)
+    : [...wallets];
+
+  const payload={
+    meta:{
+      export_date:new Date().toISOString().slice(0,10),
+      export_time_utc:new Date().toISOString(),
+      export_type:profOnly?'profitable_wallets_only':'all_wallets',
+      period_filter:exportPeriod,
+      total_wallets:fW.length,
+      total_positions:allPositions.filter(p=>fW.includes(p.wallet)).length,
+      source:'Ronin LP Scanner — LP Agent API + CLMM metrics',
+      analysis_prompt:'Проанализируй данные LP-позиций. Найди: 1) какие strategy+pair+fee_tier дают лучший win_rate, 2) оптимальный возраст позиции, 3) час UTC с лучшим PnL, 4) когда LP лучше холда, 5) паттерны прибыльных кошельков vs убыточных.',
+      fields:{overview:incOv,open_positions:incOp,closed_positions:incCl,computed_metrics:incCmp,aggregate_patterns:incAgg},
+    },
+    wallets:fW.map(w=>{
+      const wp=allPositions.filter(p=>p.wallet===w);
+      const opW=wp.filter(p=>p.status==='open');
+      const clW=wp.filter(p=>p.status==='closed');
+      const meta=walletMeta.get(w);
+      const apiOv=meta?.overview??{};
+      const entry={address:w};
+
+      if(incOv){
+        const totFee=wp.reduce((s,p)=>s+p.collectedFee+p.uncollectedFee,0);
+        const totPnl=wp.reduce((s,p)=>s+p.pnl,0);
+        const totIL=wp.reduce((s,p)=>s+(p.il?.ilUsd??0),0);
+        const wins=wp.filter(p=>p.pnl>0).length;
+        entry.overview={
+          // computed locally
+          total_pnl_usd:r2(totPnl),
+          total_fee_usd:r2(totFee),
+          total_il_usd:r2(totIL),
+          fee_to_il_ratio:totIL>0.01?r2(totFee/totIL):null,
+          win_rate_local:wp.length?r4(wins/wp.length):0,
+          total_positions:wp.length,
+          open_positions:opW.length,
+          closed_positions:clW.length,
+          avg_age_hours:r2(wp.reduce((s,p)=>s+p.ageHour,0)/(wp.length||1)),
+          avg_health_score:r2(wp.reduce((s,p)=>s+(p.health?.score??0),0)/(wp.length||1)),
+          top_strategy:topVal(wp.map(p=>p.strategy)),
+          top_pair:topVal(wp.map(p=>p.pairRaw)),
+          out_of_range_count:opW.filter(p=>!p.inRange).length,
+          lp_beats_hold_count:wp.filter(p=>(p.il?.lpVsHold??-1)>0).length,
+          // real API data per wallet
+          api_win_rate_all:apiOv.win_rate?.ALL??null,
+          api_win_rate_7d:apiOv.win_rate?.['7D']??null,
+          api_win_rate_1m:apiOv.win_rate?.['1M']??null,
+          api_total_fee_all:r2(apiOv.total_fee?.ALL??null),
+          api_total_fee_7d:r2(apiOv.total_fee?.['7D']??null),
+          api_total_pnl_all:r2(apiOv.total_pnl?.ALL??null),
+          api_total_pnl_7d:r2(apiOv.total_pnl?.['7D']??null),
+          api_roi:apiOv.roi??null,
+          api_avg_age_hour:apiOv.avg_age_hour??null,
+          api_total_pools:apiOv.total_pool??null,
+          api_first_activity:apiOv.first_activity??null,
+          api_last_activity:apiOv.last_activity??null,
+        };
+      }
+
+      if(incOp){
+        entry.open_positions=opW.map(p=>{
+          const b={
+            pair:p.pairRaw,strategy:p.strategyRaw??p.strategy,is_imbalanced:p.isImbalanced,
+            fee_tier_pct:p.feeTier,input_value:r2(p.inputValue),current_value:r2(p.value),
+            pnl_usd:r2(p.pnl),pnl_pct:r4(p.pnlPct),
+            collected_fee:r2(p.collectedFee),uncollected_fee:r2(p.uncollectedFee),
+            in_range:p.inRange,
+            price_lo:r6(p.priceRangeLo),price_hi:r6(p.priceRangeHi),price_current:r6(p.priceRangeCur),
+            range_width_pct:p.priceRangeLo>0?r2((p.priceRangeHi-p.priceRangeLo)/p.priceRangeLo*100):null,
+            age_hours:r2(p.ageHour),dpr:r4(p.dpr),created_at:p.createdAt,
+          };
+          if(incCmp){
+            b.real_il_usd=r2(p.il?.ilUsd??0);
+            b.real_il_pct=r4(p.il?.ilPct??0);
+            b.lp_vs_hold_usd=r2(p.il?.lpVsHold??0);
+            b.il_k_ratio=r4(p.il?.k??1);
+            b.fee_to_il_ratio=p.feeToIL?.ratio===Infinity?9999:r2(p.feeToIL?.ratio??0);
+            b.health_score=p.health?.score??0;
+            b.health_grade=p.health?.grade??'D';
+            b.break_even_days=p.breakEven?.days===Infinity?null:r2(p.breakEven?.days??null);
+            b.break_even_progress_pct=r2(p.breakEven?.progress??0);
+            b.apr_pct=r2(p.aprData?.apr??0);
+            b.apr_reliable=p.aprData?.isReliable??false;
+            b.rebalance_signal=p.rebalSig?.action??'HOLD';
+            b.range_edge_near=calcRangeEdge(p).nearEdge;
+          }
+          return b;
+        });
+      }
+
+      if(incCl){
+        entry.closed_positions=clW.map(p=>{
+          const b={
+            pair:p.pairRaw,strategy:p.strategyRaw??p.strategy,is_imbalanced:p.isImbalanced,
+            fee_tier_pct:p.feeTier,input_value:r2(p.inputValue),output_value:r2(p.value),
+            pnl_usd:r2(p.pnl),pnl_pct:r4(p.pnlPct),
+            collected_fee:r2(p.collectedFee),age_hours:r2(p.ageHour),
+            in_range_at_close:p.inRange,
+            price_lo:r6(p.priceRangeLo),price_hi:r6(p.priceRangeHi),
+            range_width_pct:p.priceRangeLo>0?r2((p.priceRangeHi-p.priceRangeLo)/p.priceRangeLo*100):null,
+            created_at:p.createdAt,dpr:r4(p.dpr),
+          };
+          if(incCmp){
+            b.real_il_usd=r2(p.il?.ilUsd??0);
+            b.fee_to_il_ratio=p.feeToIL?.ratio===Infinity?9999:r2(p.feeToIL?.ratio??0);
+            b.health_score=p.health?.score??0;
+            b.apr_pct=r2(p.aprData?.apr??0);
+          }
+          return b;
+        });
+      }
+
+      return entry;
+    }),
+  };
+
+  if(incAgg) payload.aggregate_patterns=buildAggPatterns(fW);
+  return payload;
+}
+
+/* Cross-wallet aggregate patterns */
+function buildAggPatterns(fW) {
+  const wp=allPositions.filter(p=>fW.includes(p.wallet));
+  if(!wp.length)return{};
+
+  function statsBy(key,getKey) {
+    const m={};
+    wp.forEach(p=>{
+      const k=getKey(p);if(!k&&k!==0)return;
+      if(!m[k])m[k]={count:0,wins:0,totPnl:0,totFee:0,totIL:0};
+      m[k].count++;if(p.pnl>0)m[k].wins++;
+      m[k].totPnl+=p.pnl;
+      m[k].totFee+=p.collectedFee+p.uncollectedFee;
+      m[k].totIL+=p.il?.ilUsd??0;
+    });
+    return Object.entries(m).map(([k,s])=>({
+      [key]:k,count:s.count,
+      win_rate:r4(s.wins/s.count),
+      avg_pnl:r2(s.totPnl/s.count),
+      total_pnl:r2(s.totPnl),
+      avg_fee:r2(s.totFee/s.count),
+      fee_to_il:s.totIL>0.01?r2(s.totFee/s.totIL):null,
+    })).sort((a,b)=>b.win_rate-a.win_rate);
+  }
+
+  const stratStats=statsBy('strategy',p=>p.strategy);
+  const pairStats=statsBy('pair',p=>p.pairRaw).filter(x=>x.count>=3).slice(0,20);
+  const feeTierStats=statsBy('fee_tier',p=>p.feeTier+'%');
+
+  // Hour analysis
+  const hourSt=Array.from({length:24},(_,h)=>({hour_utc:h,count:0,wins:0,totPnl:0}));
+  wp.forEach(p=>{
+    if(!p.createdAt)return;
+    const h=new Date(p.createdAt).getUTCHours();
+    hourSt[h].count++;if(p.pnl>0)hourSt[h].wins++;hourSt[h].totPnl+=p.pnl;
+  });
+  const hourAnalysis=hourSt.filter(h=>h.count>0).map(h=>({
+    hour_utc:h.hour_utc,count:h.count,
+    win_rate:r4(h.wins/(h.count||1)),avg_pnl:r2(h.totPnl/(h.count||1)),
+  }));
+
+  // Age bucket analysis — key insight
+  const ageBuckets=[
+    {label:'<1h',min:0,max:1},{label:'1-4h',min:1,max:4},{label:'4-12h',min:4,max:12},
+    {label:'12-24h',min:12,max:24},{label:'1-3d',min:24,max:72},{label:'3-7d',min:72,max:168},{label:'>7d',min:168,max:Infinity},
+  ];
+  const ageAnalysis=ageBuckets.map(b=>{
+    const bk=wp.filter(p=>p.ageHour>=b.min&&p.ageHour<b.max);
+    return{age_range:b.label,count:bk.length,
+      win_rate:bk.length?r4(bk.filter(p=>p.pnl>0).length/bk.length):0,
+      avg_pnl:bk.length?r2(bk.reduce((s,p)=>s+p.pnl,0)/bk.length):0,
+      avg_dpr:bk.length?r4(bk.reduce((s,p)=>s+p.dpr,0)/bk.length):0,
+      avg_fee_to_il:r2(bk.filter(p=>(p.il?.ilUsd??0)>0.01).reduce((s,p)=>s+(p.feeToIL?.ratio===Infinity?2:p.feeToIL?.ratio??0),0)/Math.max(bk.filter(p=>(p.il?.ilUsd??0)>0.01).length,1)),
+    };
+  }).filter(b=>b.count>0);
+
+  // Range width analysis
+  const rWBuckets=[{l:'<5%',mn:0,mx:5},{l:'5-10%',mn:5,mx:10},{l:'10-20%',mn:10,mx:20},{l:'20-50%',mn:20,mx:50},{l:'>50%',mn:50,mx:Infinity}];
+  const rangeAnalysis=rWBuckets.map(b=>{
+    const bk=wp.filter(p=>{
+      if(!p.priceRangeLo||!p.priceRangeHi)return false;
+      const w=(p.priceRangeHi-p.priceRangeLo)/p.priceRangeLo*100;
+      return w>=b.mn&&w<b.mx;
+    });
+    return{range_width:b.l,count:bk.length,
+      win_rate:bk.length?r4(bk.filter(p=>p.pnl>0).length/bk.length):0,
+      avg_pnl:bk.length?r2(bk.reduce((s,p)=>s+p.pnl,0)/bk.length):0,
+      out_of_range_rate:bk.length?r4(bk.filter(p=>!p.inRange).length/bk.length):0,
+      avg_health:bk.length?r2(bk.reduce((s,p)=>s+(p.health?.score??0),0)/bk.length):0,
+    };
+  }).filter(b=>b.count>0);
+
+  // Wallet-level profitability summary
+  const walletSummary=fW.map(w=>{
+    const wp2=allPositions.filter(p=>p.wallet===w);
+    const meta=walletMeta.get(w);
+    return{
+      wallet:w,
+      positions:wp2.length,
+      total_pnl:r2(wp2.reduce((s,p)=>s+p.pnl,0)),
+      win_rate:wp2.length?r4(wp2.filter(p=>p.pnl>0).length/wp2.length):0,
+      avg_health:r2(wp2.reduce((s,p)=>s+(p.health?.score??0),0)/(wp2.length||1)),
+      top_strategy:topVal(wp2.map(p=>p.strategy)),
+      api_win_rate:meta?.overview?.win_rate?.ALL??null,
+      api_roi:meta?.overview?.roi??null,
+    };
+  }).sort((a,b)=>b.total_pnl-a.total_pnl);
+
+  const opAll=allPositions.filter(p=>p.status==='open'&&fW.includes(p.wallet));
+  const ftilAll=allPositions.filter(p=>fW.includes(p.wallet)&&(p.il?.ilUsd??0)>0.01).map(p=>p.feeToIL?.ratio===Infinity?2:p.feeToIL?.ratio??0);
+  const totFeeAll=allPositions.filter(p=>fW.includes(p.wallet)).reduce((s,p)=>s+p.collectedFee+p.uncollectedFee,0);
+  const totILAll=allPositions.filter(p=>fW.includes(p.wallet)).reduce((s,p)=>s+(p.il?.ilUsd??0),0);
+
+  return{
+    summary:{
+      total_positions:wp.length,
+      open:opAll.length,
+      closed:wp.filter(p=>p.status==='closed').length,
+      overall_win_rate:r4(wp.filter(p=>p.pnl>0).length/(wp.length||1)),
+      total_pnl:r2(wp.reduce((s,p)=>s+p.pnl,0)),
+      total_fee:r2(totFeeAll),
+      total_il:r2(totILAll),
+      global_fee_to_il:totILAll>0.01?r2(totFeeAll/totILAll):null,
+      avg_fee_to_il:ftilAll.length?r2(ftilAll.reduce((a,b)=>a+b,0)/ftilAll.length):null,
+      out_of_range_pct:r4(opAll.filter(p=>!p.inRange).length/(opAll.length||1)),
+      avg_health_score:r2(wp.reduce((s,p)=>s+(p.health?.score??0),0)/(wp.length||1)),
+      lp_beats_hold_pct:r4(wp.filter(p=>(p.il?.lpVsHold??-1)>0).length/(wp.length||1)),
+      profitable_wallets:fW.filter(w=>allPositions.filter(p=>p.wallet===w).reduce((s,p)=>s+p.pnl,0)>0).length,
+    },
+    strategy_win_rates:stratStats,
+    pair_win_rates:pairStats,
+    fee_tier_analysis:feeTierStats,
+    hour_of_day_utc:hourAnalysis,
+    age_bucket_analysis:ageAnalysis,
+    range_width_analysis:rangeAnalysis,
+    wallet_ranking:walletSummary,
+  };
+}
+
+/* DOWNLOAD */
+function doExport(fmt_) {
+  const payload=buildExportPayload();
+  const dt=new Date().toISOString().slice(0,10);
+  const suf=$('exp-profitable-only').checked?'_profitable':'_all';
+  if(fmt_==='json'){
+    downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),`meteora_lp_${dt}${suf}.json`);
+  } else {
+    // Flatten all positions to CSV
+    const hdr=['wallet','pair','strategy','is_imbalanced','fee_tier_pct','status',
+      'input_value','current_value','pnl_usd','pnl_pct','collected_fee','uncollected_fee',
+      'in_range','price_lo','price_hi','price_current','range_width_pct','age_hours','dpr',
+      'real_il_usd','real_il_pct','fee_to_il_ratio','health_score','health_grade',
+      'break_even_days','apr_pct','apr_reliable','rebalance_signal','created_at'];
+    const rows=[hdr.join(',')];
+    payload.wallets.forEach(w=>{
+      const allP=[
+        ...(w.open_positions??[]).map(p=>({...p,status:'open',wallet:w.address})),
+        ...(w.closed_positions??[]).map(p=>({...p,status:'closed',wallet:w.address})),
+      ];
+      allP.forEach(p=>rows.push(hdr.map(f=>{const v=p[f]??'';return String(v).includes(',')?`"${v}"`:v;}).join(',')));
+    });
+    downloadBlob(new Blob([rows.join('\n')],{type:'text/csv'}),`meteora_lp_${dt}${suf}.csv`);
+  }
+  closeExportModal();
+}
+
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ═══════════════════════════════════════════════════
+   LOADING OVERLAY
+═══════════════════════════════════════════════════ */
+function showLoading(msg){$('loading-overlay').classList.add('active');$('loading-msg').textContent=msg;}
+function hideLoading(){$('loading-overlay').classList.remove('active');}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  $('api-key-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveKey();});
+  $('export-modal').addEventListener('click',e=>{if(e.target===$('export-modal'))closeExportModal();});
+  $('wallet-paste').addEventListener('input',()=>{
+    // live count
+    const raw=$('wallet-paste').value;
+    const n=raw.split(/[\s,;\n\r]+/).filter(s=>SOL_ADDR_RE.test(s.trim())).length;
+    $('wallet-count-badge').textContent=`${Math.min(n,MAX_WALLETS)} кошельков`;
+  });
+  if(sessionStorage.getItem(KEY_STORE))activateApp();
+});
+</script>
+</body>
+</html>
